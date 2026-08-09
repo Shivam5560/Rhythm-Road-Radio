@@ -111,14 +111,24 @@ export function useYouTubePlayer(playlistId: string, trackMap: TrackMap) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // switch playlists on mode change without recreating the player
+  // switch playlists on mode change without recreating the player.
+  // loadPlaylist() proved unreliable here — verified live that it updates
+  // the player's internal `list` field but leaves playback stuck on the
+  // outgoing video indefinitely. cuePlaylist() reliably swaps the loaded
+  // video; playVideo() then starts it (autoplay is already unlocked by
+  // this point since a real play() only ever happens after a user gesture).
   useEffect(() => {
-    if (!playerRef.current?.loadPlaylist) return;
+    if (!playerRef.current?.cuePlaylist) return;
     if (readyPlaylistIdRef.current === null) return;
     if (readyPlaylistIdRef.current === playlistId) return;
     readyPlaylistIdRef.current = playlistId;
     historyRef.current.clear();
-    playerRef.current.loadPlaylist({ listType: "playlist", list: playlistId });
+    const wasPlaying = state.status === "playing";
+    playerRef.current.cuePlaylist({ listType: "playlist", list: playlistId });
+    if (wasPlaying) {
+      playerRef.current.playVideo();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playlistId]);
 
   // progress ticker while playing
