@@ -93,6 +93,9 @@ function ModeIcon({ mode }: { mode: PlaylistMode }) {
 function Artwork({ mode, active }: { mode: PlaylistMode; active: Song }) {
   return (
     <div className={`artwork artwork-${mode}`} aria-label={`${active.title} cover artwork`}>
+      {mode === "driver" && <div className="bus-scene" aria-hidden="true"><div className="bus-window"><i /><i /><i /></div><div className="bus-route-sign">मुंबई • ४२</div><div className="bus-seat seat-one" /><div className="bus-seat seat-two" /><div className="bus-handle handle-one" /><div className="bus-handle handle-two" /><div className="passenger passenger-one" /><div className="passenger passenger-two" /><div className="road-streak streak-one" /><div className="road-streak streak-two" /></div>}
+      {mode === "rainy" && <div className="rain-scene" aria-hidden="true"><div className="mountain mountain-back" /><div className="mountain mountain-mid" /><div className="mountain mountain-front" /><div className="mist mist-one" /><div className="mist mist-two" /><div className="trail" /><div className="trekker"><i /><b /></div><div className="rain-lines" /></div>}
+      {mode === "party" && <div className="party-scene" aria-hidden="true"><div className="club-beam beam-one" /><div className="club-beam beam-two" /><div className="club-beam beam-three" /><div className="disco-facet facet-one" /><div className="disco-facet facet-two" /><div className="speaker speaker-left" /><div className="speaker speaker-right" /><div className="dancer dancer-one" /><div className="dancer dancer-two" /><div className="dancer dancer-three" /><div className="club-floor" /></div>}
       <div className="art-grid" />
       <div className="art-circle art-circle-one" />
       <div className="art-circle art-circle-two" />
@@ -165,7 +168,7 @@ export function IndianPlaylist({ mode: initialMode = "driver" }: { mode?: Playli
         <div className="playlist-panel">
           <div className="panel-heading">
             <div><span className="section-kicker"><ListMusic size={14} /> NOW BOARDING</span><h2>{current.playlist}</h2><p>{current.note}</p></div>
-            <button className="small-icon-button" aria-label="Add songs"><Plus size={18} /></button>
+          <button className="small-icon-button" aria-label="Add songs" onClick={() => setPlaying(true)}><Plus size={18} /></button>
           </div>
           <div className="song-list">
             {songs.map((song, index) => <SongRow key={song.title} song={song} index={index} active={index === activeIndex} playing={playing} onSelect={() => { setActiveIndex(index); setPlaying(true); }} />)}
@@ -192,7 +195,7 @@ export function IndianPlaylist({ mode: initialMode = "driver" }: { mode?: Playli
         <div className="now-copy"><span>NOW PLAYING</span><strong>{active.title}</strong><small>{active.artist}</small></div>
         <div className="player-controls"><button onClick={previous} aria-label="Previous song"><SkipBack size={19} fill="currentColor" /></button><button className="play-button" onClick={() => setPlaying(!playing)} aria-label={playing ? "Pause" : "Play"}>{playing ? <Pause size={19} fill="currentColor" /> : <Play size={19} fill="currentColor" />}</button><button onClick={next} aria-label="Next song"><SkipForward size={19} fill="currentColor" /></button></div>
         <div className="player-extra"><span>01:24</span><div className="player-progress"><span /></div><span>{active.duration}</span><Repeat2 size={17} /></div>
-        <button className="close-player" aria-label="Close player"><X size={17} /></button>
+         <button className="close-player" aria-label="Close player" onClick={() => setPlaying(false)}><X size={17} /></button>
       </footer>
     </main>
   );
