@@ -1,0 +1,122 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Yatra+One&display=swap');
+
+/* ===== base + per-mode ink tokens (drive UI chrome, not the scene) ===== */
+.indian-playlist{--ink:#fff4e8;--muted:#e3c8b8;--surface:#2a120e;height:100vh;overflow:hidden;position:relative;display:flex;flex-direction:column;background:#170a08;color:var(--ink);font-family:'Noto Sans Devanagari','Manrope',sans-serif;padding:26px clamp(18px,4vw,62px) 118px;transition:color .55s ease;touch-action:none}
+.mode-party{--ink:#fbe9ff;--muted:#dcb8e6;--surface:#2a1030}
+.mode-rainy{--ink:#eaf6f2;--muted:#bfe0d6;--surface:#0f2a27}
+.mode-ghazal{--ink:#fbe9d8;--muted:#d9b8a8;--surface:#3a1218}
+
+/* ===== full-bleed scene backdrop ===== */
+.scene-stage{position:fixed;inset:0;z-index:0;overflow:hidden;background:#0a0604}
+.scene-svg{width:100%;height:100%;display:block}
+.scene-scrim{position:fixed;inset:0;z-index:1;pointer-events:none}
+.scene-scrim-left{background:linear-gradient(100deg,var(--surface) 0%,rgba(0,0,0,.38) 30%,transparent 58%)}
+.scene-scrim-edges{background:linear-gradient(180deg,rgba(0,0,0,.42) 0%,transparent 16%,transparent 66%,rgba(0,0,0,.55) 100%)}
+.grain{position:fixed;inset:0;opacity:.05;pointer-events:none;z-index:2;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E")}
+
+.rain-mist-band{animation:mist-drift 9s ease-in-out infinite alternate}
+.rain-drop{animation:rain-fall 1.1s linear infinite}
+@keyframes mist-drift{to{transform:translateX(46px)}}
+@keyframes rain-fall{0%{opacity:0;transform:translateY(-10px)}15%{opacity:.6}100%{opacity:0;transform:translateY(70px)}}
+@media (prefers-reduced-motion: reduce){
+  .rain-mist-band,.rain-drop,.art-spin,.playing-bars i,.player-eq i{animation:none !important}
+}
+
+/* ===== chrome ===== */
+.topbar{position:relative;z-index:3;display:flex;align-items:center;justify-content:space-between;flex:0 0 auto}
+.brand-mark{font-size:20px;font-weight:800;line-height:.78;letter-spacing:-1px}
+.brand-mark span{font-family:'Yatra One';font-size:25px}
+.brand-mark b{font:600 11px 'Noto Sans Devanagari';display:block;letter-spacing:.5px;margin-left:1px;font-style:normal}
+.live-pill{display:flex;align-items:center;font:500 12px 'Noto Sans Devanagari';letter-spacing:.4px;padding:9px 13px;border:1px solid rgba(255,255,255,.22);border-radius:99px;background:rgba(10,6,4,.32);backdrop-filter:blur(10px)}
+.live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--mode-accent);margin-right:7px;box-shadow:0 0 8px var(--mode-accent)}
+.menu-button,.close-player{background:none;border:0;color:inherit;cursor:pointer}
+
+/* mode switching: swipe the scene, or use the dots / edge chevrons */
+.mode-dots{position:relative;z-index:3;display:flex;align-items:center;gap:14px;margin:28px 0 0;flex:0 0 auto}
+.mode-current{display:flex;align-items:center;gap:7px;font:600 13px 'Noto Sans Devanagari';color:var(--ink);opacity:.9}
+.mode-dot-row{display:flex;align-items:center;gap:6px}
+.mode-dot{width:22px;height:7px;padding:0;border-radius:99px;border:0;background:rgba(255,255,255,.32);cursor:pointer;transform:scaleX(.32);transform-origin:left center;transition:transform .25s,background .25s}
+.mode-dot:hover{background:rgba(255,255,255,.55)}
+.mode-dot-active{transform:scaleX(1);background:var(--mode-accent)}
+.mode-dot:focus-visible,.player-controls button:focus-visible,.close-player:focus-visible,.edge-nav:focus-visible{outline:2px solid var(--mode-accent);outline-offset:2px}
+.edge-nav{position:fixed;z-index:3;top:50%;transform:translateY(-50%);width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.16);background:rgba(10,6,4,.28);backdrop-filter:blur(10px);color:rgba(255,255,255,.7);display:grid;place-items:center;cursor:pointer;opacity:.6;transition:opacity .2s,background .2s}
+.edge-nav:hover{opacity:1;background:rgba(10,6,4,.5)}
+.edge-nav-prev{left:14px}
+.edge-nav-next{right:14px}
+
+/* ===== hero, centered in the remaining space ===== */
+.hero{position:relative;z-index:1;flex:1 1 auto;min-height:0;display:grid;grid-template-columns:minmax(280px,1fr) auto;align-content:center;align-items:center;gap:6vw;max-width:1370px;width:100%;margin:0 auto}
+.eyebrow{font:500 12px 'Noto Sans Devanagari';letter-spacing:.4px}
+.eyebrow-line{display:inline-block;width:28px;height:1px;background:var(--mode-accent);vertical-align:middle;margin-right:10px}
+.hero h1{font-family:'Yatra One';font-size:clamp(38px,5.6vw,78px);line-height:1.08;letter-spacing:0;max-width:640px;margin:18px 0 6px;font-weight:400;text-shadow:0 4px 28px rgba(0,0,0,.45)}
+.hindi-title{font:400 clamp(18px,2.2vw,26px) 'Noto Sans Devanagari';color:var(--mode-accent);letter-spacing:.3px}
+.description{max-width:390px;color:var(--muted);font-size:16px;line-height:1.7;margin:20px 0}
+.route-chip{display:inline-flex;align-items:center;gap:9px;padding:10px 13px;border-radius:6px;background:rgba(10,6,4,.34);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.18);font:500 13px 'Noto Sans Devanagari'}
+
+/* ===== now-card: compact "now playing" accent floating over the scene ===== */
+.hero-art{position:relative;justify-self:end;align-self:center}
+.now-card{width:224px;padding:20px 20px 22px;border-radius:20px;background:rgba(10,6,4,.4);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.16);box-shadow:0 24px 60px rgba(0,0,0,.4);position:relative}
+.now-card-top{font:500 9px 'DM Mono';letter-spacing:1.4px;color:var(--muted);text-transform:uppercase}
+.now-card-disc{width:100%;aspect-ratio:1;border-radius:14px;margin:14px 0;background:var(--mode-accent);position:relative;overflow:hidden;display:grid;place-items:center;box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)}
+.now-card-disc:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 20px,#fff 21px 22px);opacity:.16;transform:rotate(20deg)}
+.now-card-icon{color:#fff;opacity:.92}
+.now-card-icon.art-spin{animation:spin 14s linear infinite}
+.now-card-title{font:600 19px 'Noto Sans Devanagari';letter-spacing:0;line-height:1.2}
+.now-card-sub{font:500 11px 'Noto Sans Devanagari';color:var(--muted);margin-top:6px;display:block}
+.art-sticker{position:absolute;right:-14px;top:-14px;background:#f6c445;color:#241812;padding:10px;border-radius:50%;font:600 9px 'Noto Sans Devanagari';letter-spacing:0;transform:rotate(10deg);box-shadow:4px 5px 0 rgba(0,0,0,.25);width:66px;height:66px;display:grid;place-items:center;text-align:center;line-height:1.15}
+
+/* ===== player bar: richer than a plain strip — mode-tinted glass + live eq ===== */
+.now-playing{position:fixed;z-index:5;bottom:17px;left:50%;transform:translateX(-50%);width:min(880px,calc(100% - 30px));display:flex;align-items:center;gap:12px;padding:10px 16px 10px 10px;color:var(--paper,#fff4e8);border-radius:16px;box-shadow:0 16px 40px rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.14);background:linear-gradient(120deg,rgba(10,6,4,.82),rgba(10,6,4,.65)),radial-gradient(120% 160% at 0% 0%,color-mix(in srgb,var(--mode-accent) 22%,transparent),transparent 60%);backdrop-filter:blur(20px);touch-action:auto}
+.now-art{display:grid;place-items:center;flex:0 0 auto;width:44px;height:44px;border-radius:8px;color:#fff}
+.now-copy{display:flex;flex-direction:column;min-width:140px}
+.now-copy span{font:500 8px 'DM Mono';color:var(--mode-accent);letter-spacing:1px}
+.now-copy strong{font:600 14px 'Noto Sans Devanagari'}
+.now-copy small{font:11px 'Noto Sans Devanagari';color:rgba(255,255,255,.6)}
+.player-eq{display:flex;gap:3px;align-items:flex-end;height:16px;flex:0 0 auto}
+.player-eq i{display:block;width:3px;border-radius:1px;background:var(--mode-accent);animation:bars .8s infinite alternate}
+.player-eq i:nth-child(1){height:8px}
+.player-eq i:nth-child(2){height:16px;animation-delay:.2s}
+.player-eq i:nth-child(3){height:11px;animation-delay:.4s}
+.player-controls{display:flex;align-items:center;gap:2px;margin-left:auto}
+.player-controls button{display:grid;place-items:center;border:0;background:none;color:inherit;cursor:pointer;padding:7px}
+.player-controls .play-button{width:36px;height:36px;border-radius:50%;background:var(--mode-accent);color:#180a06}
+.player-volume{display:flex;align-items:center;gap:7px;color:rgba(255,255,255,.7);padding-left:10px;border-left:1px solid rgba(255,255,255,.14)}
+.player-volume input[type="range"]{width:70px;accent-color:var(--mode-accent)}
+.player-repeat{color:rgba(255,255,255,.5)}
+.close-player{color:rgba(255,255,255,.5)}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes bars{to{transform:scaleY(.35)}}
+
+@media(max-width:760px){
+  .indian-playlist{padding:20px 16px 108px}
+  .live-pill{display:none}
+  .mode-dots{margin:22px 0 0}
+  .mode-current{font-size:12px}
+  .edge-nav{width:32px;height:32px}
+  .edge-nav-prev{left:6px}
+  .edge-nav-next{right:6px}
+  .hero{grid-template-columns:1fr;gap:22px;align-content:start;padding-top:14px}
+  .hero-art{justify-self:start}
+  .now-card{width:172px}
+  .scene-scrim-left{background:linear-gradient(180deg,var(--surface) 0%,rgba(0,0,0,.42) 44%,transparent 68%)}
+  .now-playing{gap:8px;padding:8px 12px 8px 8px}
+  .player-eq,.player-volume{display:none}
+  .now-copy{min-width:0;flex:1}
+  .now-art{width:38px;height:38px}
+  .now-copy strong{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .now-copy small{font-size:10px}
+  .player-controls button{padding:6px}
+  .player-controls .play-button{width:33px;height:33px}
+}
+
+.player-shuffle{background:none;border:0;color:rgba(255,255,255,.5);cursor:pointer;padding:6px;display:grid;place-items:center}
+.player-shuffle:hover{color:rgba(255,255,255,.8)}
+.player-shuffle-active{color:var(--mode-accent)}
+.player-progress-wrap{display:flex;align-items:center;gap:7px;font:10px 'DM Mono';color:rgba(255,255,255,.55)}
+.player-progress-track{width:70px;height:3px;border-radius:2px;background:rgba(255,255,255,.18);overflow:hidden}
+.player-progress-track span{display:block;height:100%;background:var(--mode-accent)}
+
+@media(max-width:760px){
+  .player-progress-wrap{display:none}
+}
