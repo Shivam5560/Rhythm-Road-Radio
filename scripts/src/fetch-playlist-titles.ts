@@ -1,8 +1,12 @@
 import { spawnSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
 
-const playlistUrl = process.argv[2];
-const outputPath = process.argv[3];
+// pnpm forwards a literal "--" separator into argv rather than stripping it,
+// so strip a leading one ourselves to accept both
+// `pnpm run fetch-playlist -- <url> <out>` and a direct `tsx` invocation.
+const args = process.argv.slice(2).filter((arg, i) => !(i === 0 && arg === "--"));
+const playlistUrl = args[0];
+const outputPath = args[1];
 
 if (!playlistUrl || !outputPath) {
   console.error("Usage: tsx src/fetch-playlist-titles.ts <playlist-url> <output-json-path>");
