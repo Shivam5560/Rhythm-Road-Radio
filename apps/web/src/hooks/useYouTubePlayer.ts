@@ -42,8 +42,8 @@ export function useYouTubePlayer(playlistId: string, trackMap: TrackMap) {
   function advanceShuffled() {
     const player = playerRef.current;
     if (!player) return;
-    const playlist: string[] = player.getPlaylist() ?? [];
-    const currentIndex = player.getPlaylistIndex();
+    const playlist: string[] = player.getPlaylist?.() ?? [];
+    const currentIndex = player.getPlaylistIndex?.() ?? 0;
     if (playlist.length === 0) return;
     // ShuffleHistory.popPrevious() treats the top of the stack as "current" —
     // seed it with where we're leaving from the first time we shuffle, then
@@ -175,6 +175,7 @@ export function useYouTubePlayer(playlistId: string, trackMap: TrackMap) {
   return {
     title: track.title,
     artist: track.artist,
+    videoId: state.videoId,
     isPlaying: state.status === "playing",
     currentTime: state.currentTime,
     duration: state.duration,
@@ -185,5 +186,10 @@ export function useYouTubePlayer(playlistId: string, trackMap: TrackMap) {
     previous,
     toggleShuffle,
     setVolume: (v: number) => playerRef.current?.setVolume(v),
+    getQueue: (): string[] => {
+      const list = playerRef.current?.getPlaylist?.();
+      return Array.isArray(list) ? list : [];
+    },
+    playIndex: (index: number) => playerRef.current?.playVideoAt?.(index),
   };
 }

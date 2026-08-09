@@ -68,7 +68,7 @@
 /* ===== player bar: richer than a plain strip — mode-tinted glass + live eq ===== */
 .now-playing{position:fixed;z-index:5;bottom:17px;left:50%;transform:translateX(-50%);width:min(880px,calc(100% - 30px));display:flex;align-items:center;gap:12px;padding:10px 16px 10px 10px;color:var(--paper,#fff4e8);border-radius:16px;box-shadow:0 16px 40px rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.14);background:linear-gradient(120deg,rgba(10,6,4,.82),rgba(10,6,4,.65)),radial-gradient(120% 160% at 0% 0%,color-mix(in srgb,var(--mode-accent) 22%,transparent),transparent 60%);backdrop-filter:blur(20px);touch-action:auto}
 .now-art{display:grid;place-items:center;flex:0 0 auto;width:44px;height:44px;border-radius:8px;color:#fff}
-.now-copy{display:flex;flex-direction:column;min-width:140px}
+.now-copy{display:flex;flex-direction:column;min-width:140px;border:0;background:none;padding:0;text-align:left;color:inherit;cursor:pointer;font-family:inherit}
 .now-copy span{font:600 9px 'Noto Sans Devanagari';color:var(--mode-accent);letter-spacing:.2px}
 .now-copy strong{font:600 14px 'Noto Sans Devanagari'}
 .now-copy small{font:11px 'Noto Sans Devanagari';color:rgba(255,255,255,.6)}
@@ -119,4 +119,30 @@
 
 @media(max-width:760px){
   .player-progress-wrap{display:none}
+}
+
+/* ===== playlist sheet: slides up from the player, its own internal scroll — the fixed landing page never scrolls ===== */
+.sheet-overlay{position:fixed;inset:0;z-index:20;background:rgba(4,2,2,.6);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;touch-action:none;animation:sheet-fade .2s ease}
+.sheet-panel{width:min(720px,100%);max-height:min(70vh,560px);margin-bottom:100px;background:linear-gradient(180deg,rgba(20,11,9,.98),rgba(10,6,4,.98));border:1px solid rgba(255,255,255,.14);border-bottom:0;border-radius:22px 22px 0 0;box-shadow:0 -20px 60px rgba(0,0,0,.5);display:flex;flex-direction:column;padding:10px 6px 0;touch-action:auto;animation:sheet-up .28s cubic-bezier(.22,1,.36,1)}
+.sheet-handle{width:38px;height:4px;border-radius:2px;background:rgba(255,255,255,.25);margin:2px auto 12px;flex:0 0 auto}
+.sheet-header{display:flex;align-items:center;justify-content:space-between;padding:0 16px 12px;border-bottom:1px solid rgba(255,255,255,.1);flex:0 0 auto}
+.sheet-header h2{font:600 15px 'Noto Sans Devanagari';color:var(--ink,#fff4e8);margin:0}
+.sheet-close{background:none;border:0;color:rgba(255,255,255,.6);cursor:pointer;padding:6px;display:grid;place-items:center}
+.sheet-list{overflow-y:auto;padding:4px 6px 20px;flex:1;min-height:0}
+.sheet-empty{padding:24px 10px;text-align:center;font:12px 'Noto Sans Devanagari';color:rgba(255,255,255,.5)}
+.sheet-row{display:flex;align-items:center;gap:14px;width:100%;border:0;background:none;padding:12px 10px;border-radius:12px;text-align:left;cursor:pointer;color:inherit}
+.sheet-row:hover{background:rgba(255,255,255,.06)}
+.sheet-row-active{background:rgba(255,255,255,.09)}
+.sheet-row-index{font:500 11px 'DM Mono';color:rgba(255,255,255,.4);width:22px;flex:0 0 auto}
+.sheet-row-active .sheet-row-index{color:var(--mode-accent)}
+.sheet-row-copy{display:flex;flex-direction:column;gap:2px;min-width:0}
+.sheet-row-copy strong{font:600 14px 'Noto Sans Devanagari';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.sheet-row-copy small{font:11px 'Noto Sans Devanagari';color:rgba(255,255,255,.55)}
+@keyframes sheet-fade{from{opacity:0}to{opacity:1}}
+@keyframes sheet-up{from{transform:translateY(24px);opacity:.6}to{transform:translateY(0);opacity:1}}
+@media (prefers-reduced-motion: reduce){
+  .sheet-overlay,.sheet-panel{animation:none}
+}
+@media(max-width:760px){
+  .sheet-panel{margin-bottom:78px;max-height:min(75vh,560px)}
 }

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
 import {
   BusFront,
   ChevronDown,
@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import "./indian-playlist.css";
 import { SceneStage } from "./Scene";
+import { PlaylistSheet } from "./PlaylistSheet";
 import { useYouTubePlayer } from "../../../hooks/useYouTubePlayer";
 import { formatTime } from "../../../lib/formatTime";
 import { driverTracks } from "../../../data/tracks.driver";
@@ -143,9 +144,18 @@ export function IndianPlaylist({ mode: initialMode = "rainy" }: { mode?: Playlis
   const nextMode = () => setMode(modeOrder[(modeIndex + 1) % modeOrder.length]);
   const prevMode = () => setMode(modeOrder[(modeIndex - 1 + modeOrder.length) % modeOrder.length]);
 
+  const [isQueueOpen, setQueueOpen] = useState(false);
+  const [queueIds, setQueueIds] = useState<string[]>([]);
+  useEffect(() => {
+    if (isQueueOpen) setQueueIds(player.getQueue());
+  }, [isQueueOpen, mode]);
+  useEffect(() => {
+    setQueueOpen(false);
+  }, [mode]);
+
   const swipeStartX = useRef<number | null>(null);
   const isSwipeGuarded = (target: EventTarget | null) =>
-    (target as HTMLElement).closest?.(".now-playing, .now-card, .mode-dots, .edge-nav");
+    (target as HTMLElement).closest?.(".now-playing, .now-card, .mode-dots, .edge-nav, .sheet-overlay");
 
   const onSwipeDown = (e: ReactPointerEvent<HTMLElement>) => {
     if (isSwipeGuarded(e.target)) return;
@@ -215,7 +225,9 @@ export function IndianPlaylist({ mode: initialMode = "rainy" }: { mode?: Playlis
 
       <footer className="now-playing">
         <div className="now-art" style={{ background: current.accent }}><Disc3 size={22} /></div>
-        <div className="now-copy"><span>बज रहा है</span><strong>{player.title}</strong><small>{player.artist}</small></div>
+        <button className="now-copy" onClick={() => setQueueOpen(true)} aria-label="पूरी प्लेलिस्ट देखें">
+          <span>बज रहा है</span><strong>{player.title}</strong><small>{player.artist}</small>
+        </button>
         {player.isPlaying && <span className="player-eq" aria-hidden="true"><i /><i /><i /></span>}
         <div className="player-controls">
           <button onClick={player.previous} aria-label="पिछला गाना"><SkipBack size={18} fill="currentColor" /></button>
@@ -241,6 +253,16 @@ export function IndianPlaylist({ mode: initialMode = "rainy" }: { mode?: Playlis
         <Repeat2 className="player-repeat" size={16} />
         <button className="close-player" aria-label="प्लेयर बंद करें" onClick={player.pause}><X size={16} /></button>
       </footer>
+
+      <PlaylistSheet
+        open={isQueueOpen}
+        onClose={() => setQueueOpen(false)}
+        queueIds={queueIds}
+        trackMap={trackMapByMode[mode]}
+        currentVideoId={player.videoId}
+        onSelect={(index) => { player.playIndex(index); setQueueOpen(false); }}
+        heading={`प्लेलिस्ट · ${current.label}`}
+      />
     </main>
   );
 }
