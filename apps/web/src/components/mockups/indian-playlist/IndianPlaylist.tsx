@@ -215,7 +215,7 @@ export function IndianPlaylist({ mode: initialMode = "rainy" }: { mode?: Playlis
 
       <footer className="now-playing">
         <div className="now-art" style={{ background: current.accent }}><Disc3 size={22} /></div>
-        <div className="now-copy"><span>अभी बज रहा है</span><strong>{player.title}</strong><small>{player.artist}</small></div>
+        <div className="now-copy"><span>बज रहा है</span><strong>{player.title}</strong><small>{player.artist}</small></div>
         {player.isPlaying && <span className="player-eq" aria-hidden="true"><i /><i /><i /></span>}
         <div className="player-controls">
           <button onClick={player.previous} aria-label="पिछला गाना"><SkipBack size={18} fill="currentColor" /></button>

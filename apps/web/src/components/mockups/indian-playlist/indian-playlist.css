@@ -56,7 +56,7 @@
 /* ===== now-card: compact "now playing" accent floating over the scene ===== */
 .hero-art{position:relative;justify-self:end;align-self:center}
 .now-card{width:224px;padding:20px 20px 22px;border-radius:20px;background:rgba(10,6,4,.4);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.16);box-shadow:0 24px 60px rgba(0,0,0,.4);position:relative}
-.now-card-top{font:500 9px 'DM Mono';letter-spacing:1.4px;color:var(--muted);text-transform:uppercase}
+.now-card-top{font:600 10px 'Noto Sans Devanagari';letter-spacing:.4px;color:var(--muted)}
 .now-card-disc{width:100%;aspect-ratio:1;border-radius:14px;margin:14px 0;background:var(--mode-accent);position:relative;overflow:hidden;display:grid;place-items:center;box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)}
 .now-card-disc:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 20px,#fff 21px 22px);opacity:.16;transform:rotate(20deg)}
 .now-card-icon{color:#fff;opacity:.92}
@@ -69,7 +69,7 @@
 .now-playing{position:fixed;z-index:5;bottom:17px;left:50%;transform:translateX(-50%);width:min(880px,calc(100% - 30px));display:flex;align-items:center;gap:12px;padding:10px 16px 10px 10px;color:var(--paper,#fff4e8);border-radius:16px;box-shadow:0 16px 40px rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.14);background:linear-gradient(120deg,rgba(10,6,4,.82),rgba(10,6,4,.65)),radial-gradient(120% 160% at 0% 0%,color-mix(in srgb,var(--mode-accent) 22%,transparent),transparent 60%);backdrop-filter:blur(20px);touch-action:auto}
 .now-art{display:grid;place-items:center;flex:0 0 auto;width:44px;height:44px;border-radius:8px;color:#fff}
 .now-copy{display:flex;flex-direction:column;min-width:140px}
-.now-copy span{font:500 8px 'DM Mono';color:var(--mode-accent);letter-spacing:1px}
+.now-copy span{font:600 9px 'Noto Sans Devanagari';color:var(--mode-accent);letter-spacing:.2px}
 .now-copy strong{font:600 14px 'Noto Sans Devanagari'}
 .now-copy small{font:11px 'Noto Sans Devanagari';color:rgba(255,255,255,.6)}
 .player-eq{display:flex;gap:3px;align-items:flex-end;height:16px;flex:0 0 auto}
