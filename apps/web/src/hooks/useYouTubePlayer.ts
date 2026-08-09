@@ -45,8 +45,14 @@ export function useYouTubePlayer(playlistId: string, trackMap: TrackMap) {
     const playlist: string[] = player.getPlaylist() ?? [];
     const currentIndex = player.getPlaylistIndex();
     if (playlist.length === 0) return;
-    historyRef.current.push(currentIndex);
+    // ShuffleHistory.popPrevious() treats the top of the stack as "current" —
+    // seed it with where we're leaving from the first time we shuffle, then
+    // always push the track we're arriving at so the top stays accurate.
+    if (historyRef.current.length === 0) {
+      historyRef.current.push(currentIndex);
+    }
     const nextIndex = pickShuffleIndex(playlist.length, currentIndex);
+    historyRef.current.push(nextIndex);
     player.playVideoAt(nextIndex);
   }
 

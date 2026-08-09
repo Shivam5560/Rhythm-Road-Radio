@@ -39,4 +39,23 @@ describe("ShuffleHistory", () => {
     history.clear();
     expect(history.popPrevious()).toBeNull();
   });
+
+  it("walks back through more than one step in sequence", () => {
+    const history = new ShuffleHistory();
+    history.push(3);
+    history.push(7);
+    history.push(1);
+    expect(history.popPrevious()).toBe(7);
+    expect(history.popPrevious()).toBe(3);
+    expect(history.popPrevious()).toBeNull();
+  });
+
+  it("exposes its size via length", () => {
+    const history = new ShuffleHistory();
+    expect(history.length).toBe(0);
+    history.push(3);
+    expect(history.length).toBe(1);
+    history.push(7);
+    expect(history.length).toBe(2);
+  });
 });

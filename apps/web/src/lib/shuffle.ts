@@ -14,10 +14,14 @@ export class ShuffleHistory {
     this.stack.push(index);
   }
 
+  get length(): number {
+    return this.stack.length;
+  }
+
   popPrevious(): number | null {
+    if (this.stack.length <= 1) return null;
     this.stack.pop(); // drop the current track
-    const previous = this.stack.pop();
-    return previous ?? null;
+    return this.stack[this.stack.length - 1] ?? null; // peek the new current, leave it on the stack so repeated calls keep walking back
   }
 
   clear(): void {
