@@ -38,7 +38,7 @@
 .mode-dot{width:22px;height:7px;padding:0;border-radius:99px;border:0;background:rgba(255,255,255,.32);cursor:pointer;transform:scaleX(.32);transform-origin:left center;transition:transform .25s,background .25s}
 .mode-dot:hover{background:rgba(255,255,255,.55)}
 .mode-dot-active{transform:scaleX(1);background:var(--mode-accent)}
-.mode-dot:focus-visible,.player-controls button:focus-visible,.close-player:focus-visible,.edge-nav:focus-visible{outline:2px solid var(--mode-accent);outline-offset:2px}
+.mode-dot:focus-visible,.player-controls button:focus-visible,.player-repeat:focus-visible,.close-player:focus-visible,.edge-nav:focus-visible{outline:2px solid var(--mode-accent);outline-offset:2px}
 .edge-nav{position:fixed;z-index:3;top:50%;transform:translateY(-50%);width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.16);background:rgba(10,6,4,.28);backdrop-filter:blur(10px);color:rgba(255,255,255,.7);display:grid;place-items:center;cursor:pointer;opacity:.6;transition:opacity .2s,background .2s}
 .edge-nav:hover{opacity:1;background:rgba(10,6,4,.5)}
 .edge-nav-prev{left:14px}
@@ -63,6 +63,10 @@
 .now-card-icon.art-spin{animation:spin 14s linear infinite}
 .now-card-title{font:600 19px 'Noto Sans Devanagari';letter-spacing:0;line-height:1.2}
 .now-card-sub{font:500 11px 'Noto Sans Devanagari';color:var(--muted);margin-top:6px;display:block}
+/* mid-swap: the track identity is unknown, so breathe rather than assert it */
+.now-card.is-switching .now-card-title,.now-card.is-switching .now-card-sub,.now-copy.is-switching strong,.now-copy.is-switching small{animation:track-settling 1.15s ease-in-out infinite}
+@keyframes track-settling{0%,100%{opacity:.42}50%{opacity:.82}}
+@media (prefers-reduced-motion:reduce){.now-card.is-switching .now-card-title,.now-card.is-switching .now-card-sub,.now-copy.is-switching strong,.now-copy.is-switching small{animation:none;opacity:.6}}
 .art-sticker{position:absolute;right:-14px;top:-14px;background:#f6c445;color:#241812;padding:10px;border-radius:50%;font:600 9px 'Noto Sans Devanagari';letter-spacing:0;transform:rotate(10deg);box-shadow:4px 5px 0 rgba(0,0,0,.25);width:66px;height:66px;display:grid;place-items:center;text-align:center;line-height:1.15}
 
 /* ===== player bar: richer than a plain strip — mode-tinted glass + live eq ===== */
@@ -82,7 +86,8 @@
 .player-controls .play-button{width:36px;height:36px;border-radius:50%;background:var(--mode-accent);color:#180a06}
 .player-volume{display:flex;align-items:center;gap:7px;color:rgba(255,255,255,.7);padding-left:10px;border-left:1px solid rgba(255,255,255,.14)}
 .player-volume input[type="range"]{width:70px;accent-color:var(--mode-accent)}
-.player-repeat{color:rgba(255,255,255,.5)}
+.player-repeat{display:grid;place-items:center;border:0;background:none;cursor:pointer;padding:6px;color:rgba(255,255,255,.5)}
+.player-repeat:hover{color:rgba(255,255,255,.8)}
 .close-player{color:rgba(255,255,255,.5)}
 
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -114,8 +119,11 @@
 .player-shuffle:hover{color:rgba(255,255,255,.8)}
 .player-shuffle-active{color:var(--mode-accent)}
 .player-progress-wrap{display:flex;align-items:center;gap:7px;font:10px 'DM Mono';color:rgba(255,255,255,.55)}
-.player-progress-track{width:70px;height:3px;border-radius:2px;background:rgba(255,255,255,.18);overflow:hidden}
-.player-progress-track span{display:block;height:100%;background:var(--mode-accent)}
+.player-progress-track{position:relative;width:70px;height:16px;display:flex;align-items:center;cursor:pointer;touch-action:none}
+.player-progress-track::before{content:"";position:absolute;left:0;right:0;height:3px;border-radius:2px;background:rgba(255,255,255,.18)}
+.player-progress-fill{position:relative;display:block;height:3px;border-radius:2px;background:var(--mode-accent);pointer-events:none}
+.player-progress-fill::after{content:"";position:absolute;right:-4.5px;top:50%;width:9px;height:9px;border-radius:50%;background:var(--mode-accent);transform:translateY(-50%);opacity:0;transition:opacity .15s}
+.player-progress-track:hover .player-progress-fill::after,.player-progress-track:active .player-progress-fill::after{opacity:1}
 
 @media(max-width:760px){
   .player-progress-wrap{display:none}

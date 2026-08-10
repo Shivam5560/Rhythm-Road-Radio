@@ -6,12 +6,12 @@ import {
   ChevronRight,
   Disc3,
   Droplets,
+  ListMusic,
   MapPin,
   Menu,
   Moon,
   Pause,
   Play,
-  Repeat2,
   Shuffle,
   SkipBack,
   SkipForward,
@@ -115,10 +115,10 @@ function ModeIcon({ mode }: { mode: PlaylistMode }) {
   return <Droplets size={16} />;
 }
 
-function NowCard({ mode, title, artist }: { mode: PlaylistMode; title: string; artist: string }) {
+function NowCard({ mode, title, artist, switching }: { mode: PlaylistMode; title: string; artist: string; switching?: boolean }) {
   const current = modes[mode];
   return (
-    <div className="now-card" aria-label={`${title} अभी बज रहा है`}>
+    <div className={`now-card ${switching ? "is-switching" : ""}`} aria-label={`${title} अभी बज रहा है`}>
       <span className="art-sticker">{current.sticker}</span>
       <div className="now-card-top"><span>{current.cardLabel}</span></div>
       <div className="now-card-disc">
@@ -140,6 +140,12 @@ export function IndianPlaylist({ mode: initialMode = "rainy" }: { mode?: Playlis
 
   const player = useYouTubePlayer(current.playlistId, trackMapByMode[mode]);
 
+  // While a playlist swap is in flight the player still reports the outgoing
+  // mode's video, which the new mode's curated map can't name — showing it
+  // would flash the previous song (as a raw English title) mid-switch.
+  const trackTitle = player.isSwitching ? "धुन बदल रही है…" : player.title;
+  const trackArtist = player.isSwitching ? current.label : player.artist;
+
   const modeIndex = modeOrder.indexOf(mode);
   const nextMode = () => setMode(modeOrder[(modeIndex + 1) % modeOrder.length]);
   const prevMode = () => setMode(modeOrder[(modeIndex - 1 + modeOrder.length) % modeOrder.length]);
@@ -147,7 +153,21 @@ export function IndianPlaylist({ mode: initialMode = "rainy" }: { mode?: Playlis
   const [isQueueOpen, setQueueOpen] = useState(false);
   const [queueIds, setQueueIds] = useState<string[]>([]);
   useEffect(() => {
-    if (isQueueOpen) setQueueIds(player.getQueue());
+    if (!isQueueOpen) return;
+    // The queue can't be read until the mode's playlist has actually landed in
+    // the player, which may still be in flight when the sheet opens — so keep
+    // asking rather than sampling once and showing an empty list forever.
+    const sync = () => {
+      const queue = player.getQueue();
+      setQueueIds(queue);
+      return queue.length > 0;
+    };
+    if (sync()) return;
+    const timer = window.setInterval(() => {
+      if (sync()) window.clearInterval(timer);
+    }, 400);
+    return () => window.clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isQueueOpen, mode]);
   useEffect(() => {
     setQueueOpen(false);
@@ -169,6 +189,30 @@ export function IndianPlaylist({ mode: initialMode = "rainy" }: { mode?: Playlis
     else if (dx >= 60) prevMode();
   };
   const onSwipeCancel = () => { swipeStartX.current = null; };
+
+  const progressTrackRef = useRef<HTMLDivElement | null>(null);
+  const [scrubFraction, setScrubFraction] = useState<number | null>(null);
+  const fractionFromPointer = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const el = progressTrackRef.current;
+    if (!el) return 0;
+    const rect = el.getBoundingClientRect();
+    const x = Math.min(Math.max(e.clientX - rect.left, 0), rect.width);
+    return rect.width ? x / rect.width : 0;
+  };
+  const onProgressPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setScrubFraction(fractionFromPointer(e));
+  };
+  const onProgressPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (scrubFraction === null) return;
+    setScrubFraction(fractionFromPointer(e));
+  };
+  const onProgressPointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (scrubFraction === null) return;
+    const fraction = fractionFromPointer(e);
+    setScrubFraction(null);
+    if (player.duration) player.seekTo(fraction * player.duration);
+  };
 
   const wheelLocked = useRef(false);
   const onWheelSwipe = (e: ReactWheelEvent<HTMLElement>) => {
@@ -220,13 +264,13 @@ export function IndianPlaylist({ mode: initialMode = "rainy" }: { mode?: Playlis
           <p className="description">{current.description}</p>
           <div className="route-chip"><MapPin size={15} /><span>{current.chip}</span><ChevronDown size={15} /></div>
         </div>
-        <div className="hero-art"><NowCard mode={mode} title={player.title} artist={player.artist} /></div>
+        <div className="hero-art"><NowCard mode={mode} title={trackTitle} artist={trackArtist} switching={player.isSwitching} /></div>
       </section>
 
       <footer className="now-playing">
         <div className="now-art" style={{ background: current.accent }}><Disc3 size={22} /></div>
-        <button className="now-copy" onClick={() => setQueueOpen(true)} aria-label="पूरी प्लेलिस्ट देखें">
-          <span>बज रहा है</span><strong>{player.title}</strong><small>{player.artist}</small>
+        <button className={`now-copy ${player.isSwitching ? "is-switching" : ""}`} onClick={() => setQueueOpen(true)} aria-label="पूरी प्लेलिस्ट देखें">
+          <span>बज रहा है</span><strong>{trackTitle}</strong><small>{trackArtist}</small>
         </button>
         {player.isPlaying && <span className="player-eq" aria-hidden="true"><i /><i /><i /></span>}
         <div className="player-controls">
@@ -237,9 +281,21 @@ export function IndianPlaylist({ mode: initialMode = "rainy" }: { mode?: Playlis
           <button onClick={player.next} aria-label="अगला गाना"><SkipForward size={18} fill="currentColor" /></button>
         </div>
         <div className="player-progress-wrap">
-          <span>{formatTime(player.currentTime)}</span>
-          <div className="player-progress-track">
-            <span style={{ width: `${player.duration ? (player.currentTime / player.duration) * 100 : 0}%` }} />
+          <span>{formatTime(scrubFraction !== null ? scrubFraction * player.duration : player.currentTime)}</span>
+          <div
+            className="player-progress-track"
+            ref={progressTrackRef}
+            onPointerDown={onProgressPointerDown}
+            onPointerMove={onProgressPointerMove}
+            onPointerUp={onProgressPointerUp}
+            onPointerCancel={onProgressPointerUp}
+            role="slider"
+            aria-label="प्रगति"
+            aria-valuemin={0}
+            aria-valuemax={player.duration}
+            aria-valuenow={player.currentTime}
+          >
+            <span className="player-progress-fill" style={{ width: `${scrubFraction !== null ? scrubFraction * 100 : player.duration ? (player.currentTime / player.duration) * 100 : 0}%` }} />
           </div>
           <span>{formatTime(player.duration)}</span>
         </div>
@@ -250,7 +306,9 @@ export function IndianPlaylist({ mode: initialMode = "rainy" }: { mode?: Playlis
           <Volume2 size={15} />
           <input type="range" min="0" max="100" defaultValue={68} onChange={(e) => player.setVolume(Number(e.target.value))} aria-label="आवाज़" />
         </div>
-        <Repeat2 className="player-repeat" size={16} />
+        <button className="player-repeat" onClick={() => setQueueOpen(true)} aria-label="पूरी प्लेलिस्ट देखें">
+          <ListMusic size={16} />
+        </button>
         <button className="close-player" aria-label="प्लेयर बंद करें" onClick={player.pause}><X size={16} /></button>
       </footer>
 

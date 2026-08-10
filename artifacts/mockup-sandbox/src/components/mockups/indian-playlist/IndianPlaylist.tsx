@@ -1,20 +1,17 @@
-import { useMemo, useState, type CSSProperties } from "react";
+import { useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
 import {
   BusFront,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Disc3,
   Droplets,
-  Gauge,
-  Heart,
-  ListMusic,
   MapPin,
   Menu,
+  Moon,
   Pause,
   Play,
-  Plus,
-  Radio,
   Repeat2,
-  Route,
   SkipBack,
   SkipForward,
   Sparkles,
@@ -23,112 +20,115 @@ import {
   X,
 } from "lucide-react";
 import "./indian-playlist.css";
+import { SceneStage } from "./Scene";
 
-export type PlaylistMode = "driver" | "party" | "rainy";
+export type PlaylistMode = "driver" | "party" | "rainy" | "ghazal";
 
-type Song = {
-  title: string;
-  artist: string;
-  duration: string;
-  color: string;
-};
+type Song = { title: string; artist: string; duration: string; color: string };
 
 const songs: Song[] = [
-  { title: "Dus Bahane", artist: "Shaan · KK", duration: "03:26", color: "#f4a261" },
-  { title: "Aankhon Mein Teri", artist: "KK", duration: "04:04", color: "#ef476f" },
-  { title: "It's Magic", artist: "Sonu Nigam", duration: "04:06", color: "#2a9d8f" },
-  { title: "Mauja Hi Mauja", artist: "Mika Singh", duration: "04:22", color: "#e9c46a" },
-  { title: "Kya Mujhe Pyaar Hai", artist: "KK", duration: "04:26", color: "#457b9d" },
-  { title: "Zara Zara Touch Me", artist: "Monali Thakur", duration: "04:31", color: "#9b5de5" },
+  { title: "दस बहाने", artist: "शान · केके", duration: "03:26", color: "#f4a261" },
+  { title: "आँखों में तेरी", artist: "केके", duration: "04:04", color: "#ef476f" },
+  { title: "इट्स मैजिक", artist: "सोनू निगम", duration: "04:06", color: "#2a9d8f" },
+  { title: "मौजा ही मौजा", artist: "मीका सिंह", duration: "04:22", color: "#e9c46a" },
+  { title: "क्या मुझे प्यार है", artist: "केके", duration: "04:26", color: "#457b9d" },
+  { title: "ज़रा ज़रा टच मी", artist: "मोनाली ठाकुर", duration: "04:31", color: "#9b5de5" },
 ];
 
 const modes: Record<PlaylistMode, {
+  label: string;
   eyebrow: string;
   title: string;
   hindi: string;
   description: string;
   accent: string;
   soft: string;
-  playlist: string;
-  note: string;
+  chip: string;
+  sticker: string;
+  cardLabel: string;
 }> = {
   driver: {
-    eyebrow: "Route 42 · Control room",
-    title: "Keep the city moving.",
-    hindi: "चलते रहो",
-    description: "A bright, steady set for the wheel, the windshield, and every familiar stop.",
+    label: "बस ड्राइवर",
+    eyebrow: "पहाड़ी रूट · खुली छत",
+    title: "बादलों के पार, सफ़र जारी है",
+    hindi: "लद्दाख की राहों में",
+    description: "खुली छत, ठंडी हवा और पहाड़ों का हर मोड़ — हर गाना एक नया नज़ारा है।",
     accent: "#e76f51",
     soft: "#ffe0c2",
-    playlist: "Subah Ki Sawari",
-    note: "Driver's pick · 18 songs",
+    chip: "लेह, लद्दाख",
+    sticker: "सुरक्षित सफ़र",
+    cardLabel: "रूट / लेह-मनाली",
   },
   party: {
-    eyebrow: "Passenger radio · Full volume",
-    title: "Aaj naachenge sab.",
-    hindi: "नाचेंगे सब",
-    description: "Turn the aisle into a dance floor. Big hooks, bright lights, no quiet seats.",
+    label: "पार्टी मोड",
+    eyebrow: "गोवा बीच · ढलते सूरज के साथ",
+    title: "आज रेत पर नाचेंगे सब",
+    hindi: "समंदर किनारे की धुन",
+    description: "लहरों की आवाज़, बोनफायर की चिंगारी और पैरों तले रेत — यहाँ हर रात एक जश्न है।",
     accent: "#d7263d",
     soft: "#ffb4b4",
-    playlist: "Window Seat Bangers",
-    note: "Crowd favourite · 24 songs",
+    chip: "अंजुना बीच, गोवा",
+    sticker: "बेफिक्र रातें",
+    cardLabel: "साइड ए / डांस",
   },
   rainy: {
-    eyebrow: "Monsoon radio · After 8 pm",
-    title: "Let the rain sing along.",
+    label: "बारिश का मौसम",
+    eyebrow: "मानसून रेडियो · रात ८ बजे के बाद",
+    title: "बारिश को साथ गाने दो",
     hindi: "बारिश की रात",
-    description: "Soft headlights, wet roads, and the songs that know every old memory by name.",
+    description: "हल्की रोशनी, गीली सड़कें और वो गाने जो हर पुरानी याद को याद रखते हैं।",
     accent: "#2a6f97",
     soft: "#b9d9df",
-    playlist: "Khidki Ke Paar",
-    note: "Night drive · 16 songs",
+    chip: "वायनाड, केरल",
+    sticker: "बारिश / रिपीट",
+    cardLabel: "रात / २००७",
+  },
+  ghazal: {
+    label: "ग़ज़ल मोड",
+    eyebrow: "रात की बस · ग़ज़ल की महफ़िल",
+    title: "हर शेर में एक कहानी है",
+    hindi: "रात की महफ़िल",
+    description: "बर्थ की टिमटिमाती बत्ती, शीशे पर बारिश की बूँदें और ग़ज़लें जो नींद से पहले दिल को छू जाएँ।",
+    accent: "#c9974a",
+    soft: "#f0dcae",
+    chip: "आगरा कैंट",
+    sticker: "देर रात / ग़ज़ल",
+    cardLabel: "बर्थ / सात",
   },
 };
+
+const modeOrder: PlaylistMode[] = ["driver", "rainy", "party", "ghazal"];
 
 function ModeIcon({ mode }: { mode: PlaylistMode }) {
   if (mode === "driver") return <BusFront size={16} />;
   if (mode === "party") return <Sparkles size={16} />;
+  if (mode === "ghazal") return <Moon size={16} />;
   return <Droplets size={16} />;
 }
 
-function Artwork({ mode, active }: { mode: PlaylistMode; active: Song }) {
+function NowCard({ mode, active }: { mode: PlaylistMode; active: Song }) {
+  const current = modes[mode];
   return (
-    <div className={`artwork artwork-${mode}`} aria-label={`${active.title} cover artwork`}>
-      {mode === "driver" && <div className="bus-scene" aria-hidden="true"><div className="bus-window"><i /><i /><i /></div><div className="bus-route-sign">मुंबई • ४२</div><div className="bus-seat seat-one" /><div className="bus-seat seat-two" /><div className="bus-handle handle-one" /><div className="bus-handle handle-two" /><div className="passenger passenger-one" /><div className="passenger passenger-two" /><div className="road-streak streak-one" /><div className="road-streak streak-two" /></div>}
-      {mode === "rainy" && <div className="rain-scene" aria-hidden="true"><div className="mountain mountain-back" /><div className="mountain mountain-mid" /><div className="mountain mountain-front" /><div className="mist mist-one" /><div className="mist mist-two" /><div className="trail" /><div className="trekker"><i /><b /></div><div className="rain-lines" /></div>}
-      {mode === "party" && <div className="party-scene" aria-hidden="true"><div className="club-beam beam-one" /><div className="club-beam beam-two" /><div className="club-beam beam-three" /><div className="disco-facet facet-one" /><div className="disco-facet facet-two" /><div className="speaker speaker-left" /><div className="speaker speaker-right" /><div className="dancer dancer-one" /><div className="dancer dancer-two" /><div className="dancer dancer-three" /><div className="club-floor" /></div>}
-      <div className="art-grid" />
-      <div className="art-circle art-circle-one" />
-      <div className="art-circle art-circle-two" />
-      {mode === "driver" && <BusFront className="art-icon" size={88} strokeWidth={1.2} />}
-      {mode === "party" && <Disc3 className="art-icon art-spin" size={112} strokeWidth={1.1} />}
-      {mode === "rainy" && <Waves className="art-icon" size={104} strokeWidth={1.1} />}
-      <div className="art-label">{mode === "rainy" ? "रात / 2007" : mode === "party" ? "SIDE A / DANCE" : "ROUTE / 42"}</div>
-      <div className="art-title">{active.title}</div>
+    <div className="now-card" aria-label={`${active.title} अभी बज रहा है`}>
+      <span className="art-sticker">{current.sticker}</span>
+      <div className="now-card-top"><span>{current.cardLabel}</span></div>
+      <div className="now-card-disc">
+        {mode === "driver" && <BusFront className="now-card-icon" size={54} strokeWidth={1.2} />}
+        {mode === "party" && <Disc3 className="now-card-icon art-spin" size={62} strokeWidth={1.1} />}
+        {mode === "rainy" && <Waves className="now-card-icon" size={58} strokeWidth={1.1} />}
+        {mode === "ghazal" && <Moon className="now-card-icon" size={54} strokeWidth={1.1} />}
+      </div>
+      <div className="now-card-title">{active.title}</div>
+      <span className="now-card-sub">{active.artist} · {active.duration}</span>
     </div>
   );
 }
 
-function SongRow({ song, index, active, playing, onSelect }: {
-  song: Song; index: number; active: boolean; playing: boolean; onSelect: () => void;
-}) {
-  return (
-    <button className={`song-row ${active ? "song-active" : ""}`} onClick={onSelect} aria-label={`Play ${song.title}`}>
-      <span className="song-index">{active && playing ? <Radio size={16} /> : String(index + 1).padStart(2, "0")}</span>
-      <span className="song-color" style={{ background: song.color }} />
-      <span className="song-copy"><strong>{song.title}</strong><small>{song.artist}</small></span>
-      {active && <span className="playing-bars"><i /><i /><i /></span>}
-      <span className="song-time">{song.duration}</span>
-      <Heart className="row-heart" size={16} />
-    </button>
-  );
-}
-
-export function IndianPlaylist({ mode: initialMode = "driver" }: { mode?: PlaylistMode }) {
+export function IndianPlaylist({ mode: initialMode = "rainy" }: { mode?: PlaylistMode }) {
   const [mode, setMode] = useState<PlaylistMode>(initialMode);
   const [playing, setPlaying] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
   const [volume, setVolume] = useState(68);
-  const [routeOpen, setRouteOpen] = useState(false);
   const current = modes[mode];
   const active = songs[activeIndex];
   const tint = useMemo(() => ({ "--mode-accent": current.accent, "--mode-soft": current.soft } as CSSProperties), [current]);
@@ -136,22 +136,70 @@ export function IndianPlaylist({ mode: initialMode = "driver" }: { mode?: Playli
   const next = () => setActiveIndex((i) => (i + 1) % songs.length);
   const previous = () => setActiveIndex((i) => (i - 1 + songs.length) % songs.length);
 
+  const modeIndex = modeOrder.indexOf(mode);
+  const nextMode = () => setMode(modeOrder[(modeIndex + 1) % modeOrder.length]);
+  const prevMode = () => setMode(modeOrder[(modeIndex - 1 + modeOrder.length) % modeOrder.length]);
+
+  const swipeStartX = useRef<number | null>(null);
+  const isSwipeGuarded = (target: EventTarget | null) =>
+    (target as HTMLElement).closest?.(".now-playing, .now-card, .mode-dots, .edge-nav");
+
+  // touch / mouse-drag swipe
+  const onSwipeDown = (e: ReactPointerEvent<HTMLElement>) => {
+    if (isSwipeGuarded(e.target)) return;
+    swipeStartX.current = e.clientX;
+  };
+  const onSwipeUp = (e: ReactPointerEvent<HTMLElement>) => {
+    if (swipeStartX.current == null) return;
+    const dx = e.clientX - swipeStartX.current;
+    swipeStartX.current = null;
+    if (dx <= -60) nextMode();
+    else if (dx >= 60) prevMode();
+  };
+  const onSwipeCancel = () => { swipeStartX.current = null; };
+
+  // trackpad two-finger swipe fires wheel events with deltaX, not pointer drags
+  const wheelLocked = useRef(false);
+  const onWheelSwipe = (e: ReactWheelEvent<HTMLElement>) => {
+    if (isSwipeGuarded(e.target)) return;
+    if (Math.abs(e.deltaX) < 24 || Math.abs(e.deltaX) < Math.abs(e.deltaY)) return;
+    if (wheelLocked.current) return;
+    wheelLocked.current = true;
+    if (e.deltaX > 0) nextMode(); else prevMode();
+    window.setTimeout(() => { wheelLocked.current = false; }, 550);
+  };
+
   return (
-    <main className={`indian-playlist mode-${mode}`} style={tint}>
+    <main
+      className={`indian-playlist mode-${mode}`}
+      style={tint}
+      onPointerDown={onSwipeDown}
+      onPointerUp={onSwipeUp}
+      onPointerCancel={onSwipeCancel}
+      onWheel={onWheelSwipe}
+    >
+      <SceneStage mode={mode} />
+      <div className="scene-scrim scene-scrim-left" />
+      <div className="scene-scrim scene-scrim-edges" />
       <div className="grain" />
+
       <header className="topbar">
-        <div className="brand-mark"><span>रास्ता</span><b>RADIO</b></div>
-        <div className="live-pill"><span className="live-dot" /> LIVE ON THE BUS</div>
-        <button className="menu-button" aria-label="Open menu"><Menu size={21} /></button>
+        <div className="brand-mark"><span>रास्ता</span><b>रेडियो</b></div>
+        <div className="live-pill"><span className="live-dot" /> बस में लाइव</div>
+        <button className="menu-button" aria-label="मेनू खोलें"><Menu size={21} /></button>
       </header>
 
-      <nav className="mode-switcher" aria-label="Listening mode">
-        {(Object.keys(modes) as PlaylistMode[]).map((key) => (
-          <button key={key} className={`mode-button ${mode === key ? "mode-selected" : ""}`} onClick={() => setMode(key)}>
-            <ModeIcon mode={key} /><span>{key === "driver" ? "Bus Driver" : key === "party" ? "Party Mode" : "Rainy Season"}</span>
-          </button>
-        ))}
+      <nav className="mode-dots" aria-label="मोड चुनें">
+        <span className="mode-current"><ModeIcon mode={mode} />{current.label}</span>
+        <span className="mode-dot-row">
+          {modeOrder.map((key) => (
+            <button key={key} className={`mode-dot ${mode === key ? "mode-dot-active" : ""}`} onClick={() => setMode(key)} aria-label={modes[key].label} />
+          ))}
+        </span>
       </nav>
+
+      <button className="edge-nav edge-nav-prev" onClick={prevMode} aria-label="पिछला मोड"><ChevronLeft size={20} /></button>
+      <button className="edge-nav edge-nav-next" onClick={nextMode} aria-label="अगला मोड"><ChevronRight size={20} /></button>
 
       <section className="hero">
         <div className="hero-copy">
@@ -159,43 +207,28 @@ export function IndianPlaylist({ mode: initialMode = "driver" }: { mode?: Playli
           <h1>{current.title}</h1>
           <div className="hindi-title">{current.hindi}</div>
           <p className="description">{current.description}</p>
-          <div className="route-chip"><MapPin size={15} /><span>Andheri East</span><ChevronDown size={15} /></div>
+          <div className="route-chip"><MapPin size={15} /><span>{current.chip}</span><ChevronDown size={15} /></div>
         </div>
-        <div className="hero-art"><Artwork mode={mode} active={active} /><span className="art-sticker">{mode === "driver" ? "SAFE TRIP" : mode === "party" ? "NO BORING RIDES" : "बारिश / REPEAT"}</span></div>
-      </section>
-
-      <section className="dashboard-grid">
-        <div className="playlist-panel">
-          <div className="panel-heading">
-            <div><span className="section-kicker"><ListMusic size={14} /> NOW BOARDING</span><h2>{current.playlist}</h2><p>{current.note}</p></div>
-          <button className="small-icon-button" aria-label="Add songs" onClick={() => setPlaying(true)}><Plus size={18} /></button>
-          </div>
-          <div className="song-list">
-            {songs.map((song, index) => <SongRow key={song.title} song={song} index={index} active={index === activeIndex} playing={playing} onSelect={() => { setActiveIndex(index); setPlaying(true); }} />)}
-          </div>
-          <button className="queue-button" onClick={() => setPlaying(!playing)}><span>{playing ? "Playing for the whole bus" : "Radio paused"}</span><span>{playing ? "Pause set" : "Resume set"} <Play size={14} fill="currentColor" /></span></button>
-        </div>
-
-        <aside className="side-stack">
-          <div className="journey-card">
-            <div className="card-topline"><span><Route size={14} /> CURRENT JOURNEY</span><span className="status-dot">ON TIME</span></div>
-            <div className="journey-route"><strong>Andheri East</strong><span className="route-dash" /><strong>Goregaon West</strong></div>
-            <div className="journey-meta"><span><Gauge size={15} /> 12 stops left</span><span>ETA 08:42 PM</span></div>
-            <div className="route-progress"><span /></div>
-            <button className="route-detail" onClick={() => setRouteOpen(!routeOpen)}>{routeOpen ? "Hide route details" : "View route details"} <ChevronDown size={15} className={routeOpen ? "rotate-180" : ""} /></button>
-            {routeOpen && <div className="route-popover"><span>Next stop</span><b>Malad Link Road · 4 min</b><span>Road note</span><b>Light rain near Jogeshwari</b></div>}
-          </div>
-          <div className="memory-card"><div className="memory-mark">“</div><p>{mode === "rainy" ? "Some songs sound better through a fogged-up window." : mode === "party" ? "If the back seats are quiet, turn it up." : "One good song can make a long route feel short."}</p><span>— radio note 04</span></div>
-          <div className="sound-card"><div className="card-topline"><span><Volume2 size={14} /> CABIN VOLUME</span><span>{volume}%</span></div><input type="range" min="0" max="100" value={volume} onChange={(e) => setVolume(Number(e.target.value))} /></div>
-        </aside>
+        <div className="hero-art"><NowCard mode={mode} active={active} /></div>
       </section>
 
       <footer className="now-playing">
-        <div className="now-art" style={{ background: active.color }}><Disc3 size={25} /></div>
-        <div className="now-copy"><span>NOW PLAYING</span><strong>{active.title}</strong><small>{active.artist}</small></div>
-        <div className="player-controls"><button onClick={previous} aria-label="Previous song"><SkipBack size={19} fill="currentColor" /></button><button className="play-button" onClick={() => setPlaying(!playing)} aria-label={playing ? "Pause" : "Play"}>{playing ? <Pause size={19} fill="currentColor" /> : <Play size={19} fill="currentColor" />}</button><button onClick={next} aria-label="Next song"><SkipForward size={19} fill="currentColor" /></button></div>
-        <div className="player-extra"><span>01:24</span><div className="player-progress"><span /></div><span>{active.duration}</span><Repeat2 size={17} /></div>
-         <button className="close-player" aria-label="Close player" onClick={() => setPlaying(false)}><X size={17} /></button>
+        <div className="now-art" style={{ background: active.color }}><Disc3 size={22} /></div>
+        <div className="now-copy"><span>अभी बज रहा है</span><strong>{active.title}</strong><small>{active.artist}</small></div>
+        {playing && <span className="player-eq" aria-hidden="true"><i /><i /><i /></span>}
+        <div className="player-controls">
+          <button onClick={previous} aria-label="पिछला गाना"><SkipBack size={18} fill="currentColor" /></button>
+          <button className="play-button" onClick={() => setPlaying(!playing)} aria-label={playing ? "रोकें" : "चलाएँ"}>
+            {playing ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+          </button>
+          <button onClick={next} aria-label="अगला गाना"><SkipForward size={18} fill="currentColor" /></button>
+        </div>
+        <div className="player-volume">
+          <Volume2 size={15} />
+          <input type="range" min="0" max="100" value={volume} onChange={(e) => setVolume(Number(e.target.value))} aria-label="आवाज़" />
+        </div>
+        <Repeat2 className="player-repeat" size={16} />
+        <button className="close-player" aria-label="प्लेयर बंद करें" onClick={() => setPlaying(false)}><X size={16} /></button>
       </footer>
     </main>
   );
