@@ -32,7 +32,7 @@ import { ghazalTracks } from "../../../data/tracks.ghazal";
 
 export type PlaylistMode = "driver" | "party" | "rainy" | "ghazal";
 
-const modes: Record<PlaylistMode, {
+export const modes: Record<PlaylistMode, {
   label: string;
   eyebrow: string;
   title: string;

@@ -1,0 +1,28 @@
+{
+  "name": "@workspace/reel",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "studio": "remotion studio",
+    "render:vertical": "remotion render ReelVertical out/rasta-reel-9x16.mp4 --codec=h264 --crf=18 --enforce-audio-track",
+    "render:square": "remotion render ReelSquare out/rasta-reel-1x1.mp4 --codec=h264 --crf=18 --enforce-audio-track",
+    "render:cover": "remotion still ReelVertical out/cover.png --frame=90",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.0",
+    "@remotion/google-fonts": "^4.0.0",
+    "remotion": "^4.0.0",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "typescript": "~5.9.3",
+    "vitest": "^3.2.4"
+  }
+}
