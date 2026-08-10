@@ -36,7 +36,7 @@ const VERTICAL: Layout = {
   safe: { left: 80, top: 280, right: 1000, bottom: 1560 },
   boxes: {
     rollBoard: { x: 80, y: 300, width: 560, height: 120 },
-    nowCard: { x: 620, y: 620, width: 360, height: 330 },
+    nowCard: { x: 620, y: 500, width: 360, height: 460 },
     hero: { x: 80, y: 1000, width: 860, height: 260 },
     rail: { x: 80, y: 1300, width: 860, height: 60 },
     player: { x: 80, y: 1400, width: 860, height: 150 },
@@ -51,7 +51,7 @@ const SQUARE: Layout = {
   safe: { left: 64, top: 64, right: 1016, bottom: 1016 },
   boxes: {
     rollBoard: { x: 64, y: 90, width: 500, height: 104 },
-    nowCard: { x: 700, y: 250, width: 300, height: 280 },
+    nowCard: { x: 700, y: 170, width: 280, height: 380 },
     hero: { x: 64, y: 560, width: 620, height: 220 },
     rail: { x: 64, y: 820, width: 800, height: 54 },
     player: { x: 64, y: 900, width: 952, height: 116 },
