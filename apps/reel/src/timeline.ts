@@ -1,5 +1,7 @@
-export const FPS = 30;
-export const DURATION_IN_FRAMES = 840;
+export const FPS = 60;
+export const DURATION_IN_FRAMES = 28 * FPS;
+
+const SCALE = FPS / 30;
 
 export type BeatName =
   | "hook"
@@ -19,15 +21,15 @@ export interface Beat {
 }
 
 export const BEATS: Beat[] = [
-  { name: "hook", from: 0, durationInFrames: 105 },
-  { name: "driver", from: 105, durationInFrames: 120 },
-  { name: "rainy", from: 225, durationInFrames: 120 },
-  { name: "party", from: 345, durationInFrames: 120 },
-  { name: "ghazal", from: 465, durationInFrames: 120 },
-  { name: "feature1", from: 585, durationInFrames: 55 },
-  { name: "feature2", from: 640, durationInFrames: 55 },
-  { name: "feature3", from: 695, durationInFrames: 55 },
-  { name: "cta", from: 750, durationInFrames: 90 },
+  { name: "hook", from: 0 * SCALE, durationInFrames: 105 * SCALE },
+  { name: "driver", from: 105 * SCALE, durationInFrames: 120 * SCALE },
+  { name: "rainy", from: 225 * SCALE, durationInFrames: 120 * SCALE },
+  { name: "party", from: 345 * SCALE, durationInFrames: 120 * SCALE },
+  { name: "ghazal", from: 465 * SCALE, durationInFrames: 120 * SCALE },
+  { name: "feature1", from: 585 * SCALE, durationInFrames: 55 * SCALE },
+  { name: "feature2", from: 640 * SCALE, durationInFrames: 55 * SCALE },
+  { name: "feature3", from: 695 * SCALE, durationInFrames: 55 * SCALE },
+  { name: "cta", from: 750 * SCALE, durationInFrames: 90 * SCALE },
 ];
 
 export function beat(name: BeatName): Beat {

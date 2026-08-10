@@ -1,4 +1,4 @@
-import { AbsoluteFill, useCurrentFrame } from "remotion";
+import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
 import { modes, type PlaylistMode } from "@site/components/mockups/indian-playlist/IndianPlaylist";
 import type { Layout } from "../layout";
 import type { ReelFonts } from "../fonts";
@@ -26,7 +26,9 @@ const ROLL_FRAMES = 26;
 
 /** One 4-second mode segment. Frame is local to the block (0..119). */
 export function ModeBlock({ mode, previousMode, layout, fonts }: ModeBlockProps) {
-  const frame = useCurrentFrame();
+  const rawFrame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const frame = (rawFrame / fps) * 30;
   const current = modes[mode];
   const chor = choreographyFor(mode, layout);
   const { boxes, type } = layout;

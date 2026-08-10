@@ -1,4 +1,4 @@
-import { AbsoluteFill, useCurrentFrame } from "remotion";
+import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
 import { modes, type PlaylistMode } from "@site/components/mockups/indian-playlist/IndianPlaylist";
 import type { Layout } from "../layout";
 import type { ReelFonts } from "../fonts";
@@ -15,7 +15,9 @@ const ORDER: PlaylistMode[] = ["driver", "rainy", "party", "ghazal"];
 
 /** Feature 1: four taps on the mode dots, world changing on each. 55 frames. */
 export function FeatureSwipe({ layout, fonts }: { layout: Layout; fonts: ReelFonts }) {
-  const frame = useCurrentFrame();
+  const rawFrame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const frame = (rawFrame / fps) * 30;
   const index = Math.min(3, Math.floor(frame / 13));
   const mode = ORDER[index];
   const dotX = layout.boxes.rollBoard.x + 40 + index * 62;
@@ -58,7 +60,9 @@ export function FeatureSwipe({ layout, fonts }: { layout: Layout; fonts: ReelFon
 
 /** Feature 2: push in on the card, curated names cycling. 55 frames. */
 export function FeatureNames({ layout, fonts }: { layout: Layout; fonts: ReelFonts }) {
-  const frame = useCurrentFrame();
+  const rawFrame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const frame = (rawFrame / fps) * 30;
   const tracks = tracksFor("ghazal");
   const track = tracks[Math.floor(frame / 11) % tracks.length];
 
@@ -95,13 +99,20 @@ export function FeatureNames({ layout, fonts }: { layout: Layout; fonts: ReelFon
 
 /** Feature 3: tap opens the playlist sheet. 55 frames. */
 export function FeatureSheet({ layout, fonts }: { layout: Layout; fonts: ReelFonts }) {
-  const frame = useCurrentFrame();
+  const rawFrame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const frame = (rawFrame / fps) * 30;
   const tap: Gesture = {
     kind: "tap",
     at: [layout.boxes.player.x + 300, layout.boxes.player.y + 40],
     startFrame: 2,
     durationInFrames: 12,
   };
+
+  const sheetWidth = Math.min(1000, layout.width - 80);
+  const sheetLeft = Math.max(40, (layout.width - sheetWidth) / 2);
+  const sheetTop = layout.height > 1200 ? 700 : (layout.height > 900 ? 220 : 180);
+  const sheetHeight = layout.height - sheetTop - 80;
 
   return (
     <AbsoluteFill>
@@ -118,15 +129,15 @@ export function FeatureSheet({ layout, fonts }: { layout: Layout; fonts: ReelFon
             accent={modes.ghazal.accent}
           />
         </div>
-        <div style={{ position: "absolute", left: 40, top: 700 }}>
+        <div style={{ position: "absolute", left: sheetLeft, top: sheetTop }}>
           <PlaylistSheetVertical
             heading={`प्लेलिस्ट · ${modes.ghazal.label}`}
             tracks={tracksFor("ghazal")}
             currentIndex={0}
             progress={Math.min(1, Math.max(0, (frame - 12) / 24))}
             accent={modes.ghazal.accent}
-            width={1000}
-            height={820}
+            width={sheetWidth}
+            height={sheetHeight}
             bodyFamily={fonts.body}
             monoFamily={fonts.mono}
           />

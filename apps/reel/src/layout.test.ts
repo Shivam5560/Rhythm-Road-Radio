@@ -24,8 +24,14 @@ describe("layoutFor", () => {
     }
   });
 
-  it("keeps every square content box inside its own bounds", () => {
-    const l = layoutFor("square");
+  it("sizes the horizontal format for Desktop/YouTube", () => {
+    const l = layoutFor("horizontal");
+    expect(l.width).toBe(1920);
+    expect(l.height).toBe(1080);
+  });
+
+  it("keeps every horizontal content box inside its own bounds", () => {
+    const l = layoutFor("horizontal");
     for (const [name, box] of Object.entries(l.boxes)) {
       expect(box.x + box.width, `${name} right edge`).toBeLessThanOrEqual(l.width);
       expect(box.y + box.height, `${name} bottom edge`).toBeLessThanOrEqual(l.height);

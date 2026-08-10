@@ -1,4 +1,4 @@
-import { AbsoluteFill, useCurrentFrame } from "remotion";
+import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
 import { modes } from "@site/components/mockups/indian-playlist/IndianPlaylist";
 import type { Layout } from "../layout";
 import type { ReelFonts } from "../fonts";
@@ -8,7 +8,9 @@ import { Wordmark } from "../overlay/Wordmark";
 import { Rail } from "../overlay/Rail";
 
 export function Cta({ layout, fonts }: { layout: Layout; fonts: ReelFonts }) {
-  const frame = useCurrentFrame();
+  const rawFrame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const frame = (rawFrame / fps) * 30;
   const accent = modes.driver.accent;
   const underline = Math.min(1, Math.max(0, (frame - 46) / 26));
 

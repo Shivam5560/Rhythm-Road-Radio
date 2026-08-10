@@ -17,7 +17,7 @@ describe("timeline", () => {
 
   it("gives every mode a 4 second block", () => {
     for (const name of ["driver", "rainy", "party", "ghazal"] as const) {
-      expect(beat(name).durationInFrames).toBe(120);
+      expect(beat(name).durationInFrames / FPS).toBe(4);
     }
   });
 
@@ -25,12 +25,12 @@ describe("timeline", () => {
     const b = beat("driver");
     expect(localProgress(b.from, b)).toBe(0);
     expect(localProgress(b.from + b.durationInFrames, b)).toBe(1);
-    expect(localProgress(b.from + 60, b)).toBeCloseTo(0.5);
+    expect(localProgress(b.from + b.durationInFrames / 2, b)).toBeCloseTo(0.5);
   });
 
   it("clamps progress outside the beat", () => {
     const b = beat("driver");
     expect(localProgress(0, b)).toBe(0);
-    expect(localProgress(839, b)).toBe(1);
+    expect(localProgress(DURATION_IN_FRAMES - 1, b)).toBe(1);
   });
 });

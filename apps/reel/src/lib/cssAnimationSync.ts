@@ -1,5 +1,6 @@
 type Seekable = Pick<Animation, "pause" | "currentTime"> & {
   effect?: AnimationEffect | null;
+  __reelOwned?: boolean;
 };
 
 /**
@@ -35,6 +36,17 @@ type Seekable = Pick<Animation, "pause" | "currentTime"> & {
 export function syncCssAnimations(timeMs: number, animations: Seekable[]): void {
   for (const animation of animations) {
     try {
+      if (animation.__reelOwned) {
+        // Already adopted on a previous frame: just seek it. Re-running
+        // `adoptAsOwnedAnimation` here would call `target.animate()` again,
+        // creating a fresh JS-owned animation every frame that itself gets
+        // returned by the next `document.getAnimations()` call — unbounded
+        // growth in per-frame work. Adoption must happen exactly once per
+        // element's animation.
+        animation.pause();
+        animation.currentTime = timeMs;
+        continue;
+      }
       if (adoptAsOwnedAnimation(animation, timeMs)) {
         continue;
       }
@@ -68,7 +80,19 @@ function adoptAsOwnedAnimation(animation: Seekable, timeMs: number): boolean {
   const keyframes = effect.getKeyframes();
   const timing = effect.getTiming();
   (target as HTMLElement | SVGElement).style.animation = "none";
-  const owned = target.animate(keyframes, timing);
+  const owned = target.animate(keyframes, timing) as Animation & { __reelOwned?: boolean };
+  // Cancel the original CSS-backed animation so it stops being returned by
+  // `document.getAnimations()` on subsequent frames — otherwise both it and
+  // the new JS-owned animation would be present next frame.
+  (animation as Animation).cancel?.();
+  // Non-enumerable so it doesn't show up in debugging/serialization, but
+  // still a plain property read on subsequent frames.
+  Object.defineProperty(owned, "__reelOwned", {
+    value: true,
+    enumerable: false,
+    writable: false,
+    configurable: false,
+  });
   owned.pause();
   owned.currentTime = timeMs;
   return true;

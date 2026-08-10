@@ -7,7 +7,12 @@
     "studio": "remotion studio",
     "render:vertical": "remotion render ReelVertical out/rasta-reel-9x16.mp4 --codec=h264 --crf=18 --enforce-audio-track",
     "render:square": "remotion render ReelSquare out/rasta-reel-1x1.mp4 --codec=h264 --crf=18 --enforce-audio-track",
-    "render:cover": "remotion still ReelVertical out/cover.png --frame=90",
+    "render:horizontal": "remotion render ReelHorizontal out/rasta-reel-16x9.mp4 --codec=h264 --crf=18 --enforce-audio-track",
+    "render:horizontal:2k": "remotion render ReelHorizontal2K out/rasta-reel-16x9-2k.mp4 --codec=h264 --crf=18 --enforce-audio-track",
+    "render:vertical:2k": "remotion render ReelVertical2K out/rasta-reel-9x16-2k.mp4 --codec=h264 --crf=18 --enforce-audio-track",
+    "render:all": "pnpm run render:vertical && pnpm run render:square && pnpm run render:horizontal",
+    "render:2k": "pnpm run render:horizontal:2k && pnpm run render:vertical:2k",
+    "render:cover": "remotion still ReelVertical out/cover.png --frame=180",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run"
   },
