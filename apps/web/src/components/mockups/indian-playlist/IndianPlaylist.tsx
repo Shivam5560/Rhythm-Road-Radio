@@ -9,6 +9,7 @@ import {
   Moon,
   Pause,
   Play,
+  Radio,
   Shuffle,
   SkipBack,
   SkipForward,
@@ -22,6 +23,7 @@ import { useYouTubePlayer } from "../../../hooks/useYouTubePlayer";
 import { useOnlineCount } from "../../../hooks/useOnlineCount";
 import { formatTime } from "../../../lib/formatTime";
 import { toDevanagariDigits } from "../../../lib/devanagariDigits";
+import { playAccent, type AccentKind } from "../../../lib/accentSounds";
 import { driverTracks } from "../../../data/tracks.driver";
 import { rainyTracks } from "../../../data/tracks.rainy";
 import { partyTracks } from "../../../data/tracks.party";
@@ -46,6 +48,8 @@ export const modes: Record<PlaylistMode, {
   chip: string;
   cardLabel: string;
   playlistId: string;
+  accent_kind: AccentKind;
+  accentLabel: string;
 }> = {
   driver: {
     label: "बस ड्राइवर",
@@ -56,6 +60,8 @@ export const modes: Record<PlaylistMode, {
     chip: "लेह–मनाली",
     cardLabel: "रूट",
     playlistId: "PL0umg_TNpoZTTdZVIi5tfX69pRmoMFGna",
+    accent_kind: "horn",
+    accentLabel: "हॉर्न",
   },
   party: {
     label: "पार्टी मोड",
@@ -66,6 +72,8 @@ export const modes: Record<PlaylistMode, {
     chip: "अंजुना, गोवा",
     cardLabel: "साइड ए",
     playlistId: "PLfcRxVaMQ7ZM",
+    accent_kind: "octopad",
+    accentLabel: "बीट",
   },
   rainy: {
     label: "बारिश का मौसम",
@@ -76,6 +84,8 @@ export const modes: Record<PlaylistMode, {
     chip: "वायनाड, केरल",
     cardLabel: "मानसून",
     playlistId: "PL43tsEhYIdTuf-xO_4ZrZtRp1dwulm2SQ",
+    accent_kind: "thunder",
+    accentLabel: "बिजली",
   },
   ghazal: {
     label: "ग़ज़ल मोड",
@@ -86,6 +96,8 @@ export const modes: Record<PlaylistMode, {
     chip: "आगरा कैंट",
     cardLabel: "बर्थ",
     playlistId: "PL43tsEhYIdTvnK96MqsVkXV90fQFcsdoN",
+    accent_kind: "sitar",
+    accentLabel: "सितार",
   },
 };
 
@@ -117,6 +129,16 @@ export function IndianPlaylist({ mode: initialMode = "driver" }: { mode?: Playli
 
   const player = useYouTubePlayer(current.playlistId, trackMapByMode[mode]);
   const online = useOnlineCount();
+
+  // Fires the mode's accent over the music and flashes a matching reaction.
+  // The music ducks for exactly as long as the accent lasts.
+  const [accentPulse, setAccentPulse] = useState(0);
+  const fireAccent = () => {
+    const ms = playAccent(current.accent_kind);
+    if (!ms) return;
+    player.duckFor(ms);
+    setAccentPulse((n) => n + 1);
+  };
 
   // While a playlist swap is in flight the player still reports the outgoing
   // mode's video, which the new mode's curated map can't name — showing it
@@ -215,6 +237,9 @@ export function IndianPlaylist({ mode: initialMode = "driver" }: { mode?: Playli
       <div className="scene-scrim scene-scrim-left" />
       <div className="scene-scrim scene-scrim-edges" />
       <div className="grain" />
+      {/* Keyed on the press count so a repeat press restarts the animation
+          instead of being ignored as an unchanged element. */}
+      {accentPulse > 0 && <div key={accentPulse} className={`accent-flash accent-flash-${mode}`} aria-hidden="true" />}
 
       <header className="topbar">
         <div className="brand-mark"><span>रास्ता</span><b>रेडियो</b></div>
@@ -249,7 +274,13 @@ export function IndianPlaylist({ mode: initialMode = "driver" }: { mode?: Playli
           <p className="hero-line">{current.line}</p>
           {/* Chevron dropped: it promised a route dropdown that does not exist.
               The chip is a label, so it now looks like one. */}
-          <div className="route-chip"><MapPin size={15} /><span>{current.chip}</span></div>
+          <div className="hero-actions">
+            <div className="route-chip"><MapPin size={15} /><span>{current.chip}</span></div>
+            <button className="accent-button" onClick={fireAccent} aria-label={`${current.accentLabel} बजाओ`}>
+              <Radio size={15} />
+              <span>{current.accentLabel}</span>
+            </button>
+          </div>
         </div>
       </section>
 

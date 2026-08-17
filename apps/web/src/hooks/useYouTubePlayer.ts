@@ -76,6 +76,10 @@ export function useYouTubePlayer(playlistId: string, trackMap: TrackMap) {
   // the constructor is still running).
   const generationRef = useRef(0);
   const volumeRef = useRef<number | null>(null);
+  // Volume to restore after an accent has ducked the music, and the timer that
+  // does it. Refs, not state — nothing renders off them.
+  const duckedFromRef = useRef<number | null>(null);
+  const duckTimerRef = useRef<number | null>(null);
   const [isReady, setIsReady] = useState(false);
 
   // A YT.Player object exists the instant the constructor returns, but its API
@@ -377,6 +381,25 @@ export function useYouTubePlayer(playlistId: string, trackMap: TrackMap) {
       // Remembered so a rebuilt instance comes back at the same volume.
       volumeRef.current = v;
       call("setVolume", v);
+    },
+    /**
+     * Pull the music down for `ms` while a one-shot accent sounds over it, then
+     * let it back up. Reads the live volume rather than the remembered one,
+     * because the user may never have touched the slider. Overlapping calls
+     * extend the duck instead of stacking, so mashing the button does not
+     * leave the music stuck quiet.
+     */
+    duckFor: (ms: number) => {
+      const live = call<number>("getVolume");
+      if (typeof live !== "number") return;
+      if (duckedFromRef.current === null) duckedFromRef.current = live;
+      call("setVolume", Math.round(duckedFromRef.current * 0.4));
+      if (duckTimerRef.current) window.clearTimeout(duckTimerRef.current);
+      duckTimerRef.current = window.setTimeout(() => {
+        if (duckedFromRef.current !== null) call("setVolume", duckedFromRef.current);
+        duckedFromRef.current = null;
+        duckTimerRef.current = null;
+      }, ms + 140);
     },
     getQueue: (): string[] => {
       const list = call<string[]>("getPlaylist");

@@ -195,6 +195,39 @@
    paragraph was what made the old hero read busy rather than premium. */
 .hero h1{font-family:'Yatra One';font-size:clamp(60px,10.5vw,164px);line-height:.9;letter-spacing:-.015em;margin:0;font-weight:400;text-shadow:0 6px 44px rgba(0,0,0,.5)}
 .hero-line{font:400 clamp(15px,1.6vw,20px) 'Noto Sans Devanagari';color:var(--muted);letter-spacing:.02em;line-height:1.6;margin:18px 0 26px;max-width:30ch;text-shadow:0 2px 18px rgba(0,0,0,.5)}
+/* Hero actions: the route label and the mode's accent trigger sit together, so
+   the one interactive thing in the hero reads as a pair with its context. */
+.hero-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.accent-button{display:inline-flex;align-items:center;gap:8px;padding:10px 15px;border-radius:99px;cursor:pointer;font:600 13px 'Noto Sans Devanagari';color:#1a0e08;background:var(--mode-accent);border:0;box-shadow:0 4px 18px -4px color-mix(in srgb,var(--mode-accent) 75%,transparent);transition:transform .12s ease,filter .18s ease}
+.accent-button:hover{filter:brightness(1.07)}
+/* Snaps down on press — a horn button should feel physically pushed. */
+.accent-button:active{transform:scale(.94)}
+.accent-button:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+
+/* The on-screen half of the accent. Lightning is a hard double-strike; the
+   others are a soft tint of their own accent colour, so every mode reacts
+   without every mode flashing white like a storm. */
+.accent-flash{position:fixed;inset:0;z-index:4;pointer-events:none;mix-blend-mode:screen}
+.accent-flash-rainy{background:rgba(226,240,255,.92);animation:accent-strike 1.5s ease-out forwards}
+.accent-flash-driver{background:radial-gradient(60% 50% at 72% 62%,color-mix(in srgb,var(--mode-accent) 55%,transparent),transparent 70%);animation:accent-pulse .85s ease-out forwards}
+.accent-flash-party{background:radial-gradient(70% 60% at 50% 55%,color-mix(in srgb,var(--mode-accent) 60%,transparent),transparent 72%);animation:accent-pulse .6s ease-out forwards}
+.accent-flash-ghazal{background:radial-gradient(45% 40% at 55% 35%,color-mix(in srgb,var(--mode-accent) 45%,transparent),transparent 70%);animation:accent-pulse 2.2s ease-out forwards}
+@keyframes accent-strike{
+  0%{opacity:0}
+  3%{opacity:.85}
+  8%{opacity:.12}
+  13%{opacity:.7}
+  22%{opacity:.05}
+  100%{opacity:0}
+}
+@keyframes accent-pulse{from{opacity:.5}to{opacity:0}}
+@media (prefers-reduced-motion: reduce){
+  /* A strobing white overlay is exactly the pattern reduced-motion exists to
+     suppress, so the visual half is dropped entirely. The sound still plays. */
+  .accent-flash{display:none}
+  .accent-button:active{transform:none}
+}
+
 .route-chip{display:inline-flex;align-items:center;gap:9px;padding:10px 13px;border-radius:6px;background:rgba(10,6,4,.34);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.18);font:500 13px 'Noto Sans Devanagari'}
 
 /* mid-swap: the track identity is unknown, so breathe rather than assert it */
