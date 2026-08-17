@@ -1,13 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
 import {
   BusFront,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Droplets,
   ListMusic,
   MapPin,
-  Menu,
   Moon,
   Pause,
   Play,
@@ -228,7 +226,9 @@ export function IndianPlaylist({ mode: initialMode = "driver" }: { mode?: Playli
           {online !== null && <b className="live-count">{toDevanagariDigits(String(online))}</b>}
           रास्ते पर लाइव
         </div>
-        <button className="menu-button" aria-label="मेनू खोलें"><Menu size={21} /></button>
+        {/* The hamburger was removed rather than wired: it had an aria-label and
+            no handler, so it invited a click and ignored it. There is no second
+            screen for it to open — the whole product is this one surface. */}
       </header>
 
       <nav className="mode-dots" aria-label="मोड चुनें">
@@ -247,7 +247,9 @@ export function IndianPlaylist({ mode: initialMode = "driver" }: { mode?: Playli
         <div className="hero-copy">
           <h1>{current.title}</h1>
           <p className="hero-line">{current.line}</p>
-          <div className="route-chip"><MapPin size={15} /><span>{current.chip}</span><ChevronDown size={15} /></div>
+          {/* Chevron dropped: it promised a route dropdown that does not exist.
+              The chip is a label, so it now looks like one. */}
+          <div className="route-chip"><MapPin size={15} /><span>{current.chip}</span></div>
         </div>
       </section>
 
