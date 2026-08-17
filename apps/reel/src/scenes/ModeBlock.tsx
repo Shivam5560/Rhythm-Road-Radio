@@ -67,7 +67,9 @@ export function ModeBlock({ mode, previousMode, layout, fonts }: ModeBlockProps)
     ? 0.22 + dragState.progress * 0.44
     : 0.22 + (frame / BLOCK_FRAMES) * 0.1;
 
-  const track = tracksFor(mode)[0] ?? { title: current.hindi, artist: current.label };
+  // `hindi` was folded into the single-word `title` when the hero copy was
+  // simplified to one Devanagari headline per mode.
+  const track = tracksFor(mode)[0] ?? { title: current.title, artist: current.label };
 
   return (
     <AbsoluteFill>
