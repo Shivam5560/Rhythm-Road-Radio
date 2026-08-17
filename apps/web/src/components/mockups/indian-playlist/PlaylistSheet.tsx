@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import type { TrackMap } from "../../../lib/trackMetadata";
+import { toDevanagariDigits } from "../../../lib/devanagariDigits";
 
 export function PlaylistSheet({
   open,
@@ -38,7 +39,7 @@ export function PlaylistSheet({
                 className={`sheet-row ${active ? "sheet-row-active" : ""}`}
                 onClick={() => onSelect(index)}
               >
-                <span className="sheet-row-index">{String(index + 1).padStart(2, "0")}</span>
+                <span className="sheet-row-index">{toDevanagariDigits(String(index + 1).padStart(2, "0"))}</span>
                 <span className="sheet-row-copy">
                   <strong>{info?.title ?? "—"}</strong>
                   <small>{info?.artist ?? ""}</small>

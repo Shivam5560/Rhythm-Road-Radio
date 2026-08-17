@@ -1,4 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Yatra+One&display=swap');
+/* DM Mono was dropped with the Latin numerals — the page is one script and now
+   also one Devanagari family plus the display face, so that is one fewer font
+   request blocking first paint. */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Yatra+One&display=swap');
 
 /* ===== base + per-mode ink tokens (drive UI chrome, not the scene) ===== */
 .indian-playlist{--ink:#fff4e8;--muted:#e3c8b8;--surface:#2a120e;height:100vh;overflow:hidden;position:relative;display:flex;flex-direction:column;background:#170a08;color:var(--ink);font-family:'Noto Sans Devanagari','Manrope',sans-serif;padding:26px clamp(18px,4vw,62px) 118px;transition:color .55s ease;touch-action:none}
@@ -6,20 +9,159 @@
 .mode-rainy{--ink:#eaf6f2;--muted:#bfe0d6;--surface:#0f2a27}
 .mode-ghazal{--ink:#fbe9d8;--muted:#d9b8a8;--surface:#3a1218}
 
-/* ===== full-bleed scene backdrop ===== */
+/* ===== full-bleed scene backdrop — one pre-rendered plate per mode ===== */
 .scene-stage{position:fixed;inset:0;z-index:0;overflow:hidden;background:#0a0604}
-.scene-svg{width:100%;height:100%;display:block}
+/* Each visited mode keeps its own layer so a switch crossfades between two
+   already-decoded rasters. No filters here on purpose: the plates carry their
+   own grain and depth, and anything live would put per-frame work back under
+   the chrome's backdrop-filters — which is exactly what used to stutter. */
+.scene-plate{position:absolute;inset:0;background-size:cover;background-position:center;background-repeat:no-repeat;opacity:0;transition:opacity .7s ease}
+.scene-plate.is-active{opacity:1}
 .scene-scrim{position:fixed;inset:0;z-index:1;pointer-events:none}
-.scene-scrim-left{background:linear-gradient(100deg,var(--surface) 0%,rgba(0,0,0,.38) 30%,transparent 58%)}
-.scene-scrim-edges{background:linear-gradient(180deg,rgba(0,0,0,.42) 0%,transparent 16%,transparent 66%,rgba(0,0,0,.55) 100%)}
-.grain{position:fixed;inset:0;opacity:.05;pointer-events:none;z-index:2;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E")}
+/* The plates are art-directed to keep their left third quiet, so the scrim only
+   has to deepen it a touch rather than paint over a busy scene. */
+.scene-scrim-left{background:linear-gradient(100deg,color-mix(in srgb,var(--surface) 72%,transparent) 0%,rgba(0,0,0,.26) 34%,transparent 62%)}
+.scene-scrim-edges{background:linear-gradient(180deg,rgba(0,0,0,.34) 0%,transparent 18%,transparent 62%,rgba(0,0,0,.62) 100%)}
+.grain{position:fixed;inset:0;opacity:.035;pointer-events:none;z-index:2;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E")}
 
-.rain-mist-band{animation:mist-drift 9s ease-in-out infinite alternate}
-.rain-drop{animation:rain-fall 1.1s linear infinite}
-@keyframes mist-drift{to{transform:translateX(46px)}}
-@keyframes rain-fall{0%{opacity:0;transform:translateY(-10px)}15%{opacity:.6}100%{opacity:0;transform:translateY(70px)}}
+/* ===== per-mode ambience =====
+   Every effect below animates ONLY transform or opacity, so it stays on the
+   compositor. Each falling layer is a repeating gradient banded to an exact
+   pixel height and translated by exactly that height, which loops with no
+   visible seam and needs no particle DOM. */
+/* Drops and flakes are drawn as elongated / round radial-gradient stops inside
+   one repeating tile. A linear-gradient cannot do this: its bands run
+   perpendicular to the gradient axis and are infinitely long, which gives
+   continuous streaks across the whole screen rather than discrete drops.
+   The layer is oversized and rotated so the fall can be tilted without gaps
+   showing at the edges; translating by exactly one tile height along the
+   rotated axis keeps the loop seamless. */
+.fx{position:absolute;inset:-25%;pointer-events:none;--fx-tilt:0deg;will-change:transform;
+  animation:fx-fall linear infinite;transform:rotate(var(--fx-tilt))}
+@keyframes fx-fall{
+  from{transform:rotate(var(--fx-tilt)) translate3d(0,0,0)}
+  to{transform:rotate(var(--fx-tilt)) translate3d(0,var(--fx-shift),0)}
+}
+
+/* -- rain: two sheets, the near one faster, longer and brighter -- */
+.fx-rain{--fx-tilt:9deg;background-repeat:repeat}
+.fx-rain-far{
+  background-image:
+    radial-gradient(1px 9px at 30px 20px,rgba(226,240,236,.5),transparent),
+    radial-gradient(1px 7px at 96px 130px,rgba(226,240,236,.42),transparent),
+    radial-gradient(1px 10px at 158px 62px,rgba(226,240,236,.48),transparent),
+    radial-gradient(1px 8px at 214px 176px,rgba(226,240,236,.4),transparent),
+    radial-gradient(1px 9px at 62px 208px,rgba(226,240,236,.45),transparent),
+    radial-gradient(1px 7px at 186px 236px,rgba(226,240,236,.38),transparent);
+  background-size:240px 240px;--fx-shift:240px;animation-duration:.9s;opacity:.6}
+.fx-rain-near{
+  background-image:
+    radial-gradient(1.4px 15px at 48px 40px,rgba(240,250,246,.78),transparent),
+    radial-gradient(1.4px 12px at 140px 170px,rgba(240,250,246,.66),transparent),
+    radial-gradient(1.4px 16px at 236px 96px,rgba(240,250,246,.72),transparent),
+    radial-gradient(1.4px 13px at 88px 250px,rgba(240,250,246,.6),transparent),
+    radial-gradient(1.4px 14px at 274px 214px,rgba(240,250,246,.7),transparent);
+  background-size:300px 300px;--fx-shift:300px;animation-duration:.55s;opacity:.75}
+
+/* -- snow: three layers, small tiles for density, drifting slightly on the wind.
+   Tighter tiles are what raise the flake count — the tile repeats across the
+   whole viewport, so halving its size roughly quadruples what you see. -- */
+.fx-snow{background-repeat:repeat;--fx-tilt:4deg}
+.fx-snow-far{
+  background-image:
+    radial-gradient(1.5px 1.5px at 22px 30px,rgba(255,255,255,.8),transparent),
+    radial-gradient(1.3px 1.3px at 96px 74px,rgba(255,255,255,.68),transparent),
+    radial-gradient(1.6px 1.6px at 54px 122px,rgba(255,255,255,.75),transparent),
+    radial-gradient(1.2px 1.2px at 132px 20px,rgba(255,255,255,.6),transparent),
+    radial-gradient(1.5px 1.5px at 148px 148px,rgba(255,255,255,.72),transparent),
+    radial-gradient(1.3px 1.3px at 8px 96px,rgba(255,255,255,.64),transparent),
+    radial-gradient(1.4px 1.4px at 118px 104px,rgba(255,255,255,.7),transparent);
+  background-size:130px 130px;--fx-shift:130px;animation-duration:8s;opacity:.85}
+.fx-snow-mid{
+  background-image:
+    radial-gradient(2.1px 2.1px at 40px 56px,rgba(255,255,255,.88),transparent),
+    radial-gradient(1.9px 1.9px at 158px 130px,rgba(255,255,255,.8),transparent),
+    radial-gradient(2.3px 2.3px at 96px 196px,rgba(255,255,255,.85),transparent),
+    radial-gradient(1.8px 1.8px at 208px 40px,rgba(255,255,255,.76),transparent),
+    radial-gradient(2px 2px at 12px 166px,rgba(255,255,255,.82),transparent),
+    radial-gradient(2.2px 2.2px at 186px 214px,rgba(255,255,255,.84),transparent);
+  background-size:180px 180px;--fx-shift:180px;animation-duration:6s;opacity:.9}
+.fx-snow-near{
+  background-image:
+    radial-gradient(3.2px 3.2px at 60px 90px,rgba(255,255,255,.95),transparent),
+    radial-gradient(2.8px 2.8px at 250px 210px,rgba(255,255,255,.88),transparent),
+    radial-gradient(3.6px 3.6px at 170px 318px,rgba(255,255,255,.92),transparent),
+    radial-gradient(2.9px 2.9px at 300px 60px,rgba(255,255,255,.85),transparent),
+    radial-gradient(3.4px 3.4px at 24px 250px,rgba(255,255,255,.9),transparent),
+    radial-gradient(2.7px 2.7px at 210px 140px,rgba(255,255,255,.82),transparent);
+  background-size:280px 320px;--fx-shift:320px;animation-duration:4.6s;opacity:.95}
+
+/* -- party: the fire and the string lights breathe, out of phase --
+   These sit flush to the viewport rather than oversized: their gradient stops
+   are positioned in percentages aimed at the fire and the string lights in the
+   plate, so any inset would slide the light off the thing it is lighting. */
+.fx-glow,.fx-bulbs,.fx-lamp,.fx-sweep{inset:0;will-change:opacity}
+.fx-glow{animation:fx-breathe ease-in-out infinite alternate}
+.fx-glow-fire{background:radial-gradient(26% 30% at 71% 64%,rgba(255,166,74,.5),rgba(255,120,40,.16) 45%,transparent 72%);animation-duration:2.3s}
+@keyframes fx-breathe{from{opacity:.42}to{opacity:.95}}
+
+/* Coloured stage washes drifting over the crowd, plus one amber twinkle on the
+   strung bulbs. Pin-sized dots were tried first and did not work: the plate
+   already paints its own bulbs, so 4px dots either missed them or read as
+   dust. A wide wash that slides and pulses is what actually says "party
+   lights", and it needs no pixel alignment to the artwork underneath. */
+.fx-bulbs{mix-blend-mode:screen}
+.fx-bulbs-rose{
+  background:radial-gradient(42% 46% at 62% 44%,rgba(255,64,150,.30),rgba(255,64,150,.10) 52%,transparent 74%);
+  animation:fx-wash-a 5.2s ease-in-out infinite alternate}
+.fx-bulbs-cyan{
+  background:radial-gradient(38% 42% at 86% 40%,rgba(56,206,238,.26),rgba(56,206,238,.08) 54%,transparent 76%);
+  animation:fx-wash-b 6.8s ease-in-out infinite alternate}
+.fx-bulbs-amber{
+  background-image:
+    radial-gradient(7px 7px at 72% 33%,rgba(255,206,128,.85),transparent),
+    radial-gradient(8px 8px at 79% 30%,rgba(255,196,110,.8),transparent),
+    radial-gradient(7px 7px at 87% 32%,rgba(255,214,150,.75),transparent),
+    radial-gradient(9px 9px at 94% 36%,rgba(255,200,120,.7),transparent),
+    radial-gradient(7px 7px at 66% 37%,rgba(255,210,140,.7),transparent);
+  animation:fx-twinkle 1.6s ease-in-out infinite alternate}
+@keyframes fx-twinkle{from{opacity:.3}to{opacity:1}}
+@keyframes fx-wash-a{
+  from{transform:translate3d(-4%,0,0);opacity:.45}
+  to{transform:translate3d(5%,-2%,0);opacity:1}
+}
+@keyframes fx-wash-b{
+  from{transform:translate3d(4%,1%,0);opacity:.9}
+  to{transform:translate3d(-5%,-2%,0);opacity:.4}
+}
+
+/* -- ghazal -- */
+.fx-lamp{background:radial-gradient(20% 26% at 57% 30%,rgba(255,198,116,.38),transparent 68%);animation:fx-breathe 5.5s ease-in-out infinite alternate}
+/* Dust drifting up through the lamp pool. Same tile trick as the snow, run
+   upwards and slowly enough to read as motes rather than weather. */
+.fx-motes{inset:-25%;background-repeat:repeat;
+  background-image:
+    radial-gradient(1.6px 1.6px at 40px 60px,rgba(255,214,150,.55),transparent),
+    radial-gradient(1.3px 1.3px at 130px 150px,rgba(255,214,150,.42),transparent),
+    radial-gradient(1.8px 1.8px at 88px 224px,rgba(255,224,170,.5),transparent),
+    radial-gradient(1.4px 1.4px at 196px 96px,rgba(255,214,150,.4),transparent);
+  background-size:250px 250px;--fx-shift:-250px;animation:fx-fall 18s linear infinite;opacity:.7}
+/* A roadside lamp passing the window: a soft band crossing right to left, with
+   a long dark gap so it reads as one lamp every few seconds, not a strobe. */
+.fx-sweep{background:linear-gradient(100deg,transparent 38%,rgba(255,196,124,.16) 46%,rgba(255,214,150,.3) 50%,rgba(255,196,124,.16) 54%,transparent 62%);animation:fx-pass 6.5s ease-in-out infinite}
+@keyframes fx-pass{
+  0%{transform:translate3d(48%,0,0);opacity:0}
+  18%{opacity:.9}
+  46%{opacity:.75}
+  70%,100%{transform:translate3d(-52%,0,0);opacity:0}
+}
+
 @media (prefers-reduced-motion: reduce){
-  .rain-mist-band,.rain-drop,.art-spin,.playing-bars i,.player-eq i{animation:none !important}
+  .scene-plate{transition:none}
+  .fx{animation:none !important}
+  /* Weather still reads as weather when frozen — the streaks and flakes stay,
+     they just stop moving. The glows settle mid-swell instead of vanishing. */
+  .fx-glow,.fx-lamp{opacity:.7}
 }
 
 /* ===== chrome ===== */
@@ -28,8 +170,9 @@
 .brand-mark span{font-family:'Yatra One';font-size:25px}
 .brand-mark b{font:600 11px 'Noto Sans Devanagari';display:block;letter-spacing:.5px;margin-left:1px;font-style:normal}
 .live-pill{display:flex;align-items:center;font:500 12px 'Noto Sans Devanagari';letter-spacing:.4px;padding:9px 13px;border:1px solid rgba(255,255,255,.22);border-radius:99px;background:rgba(10,6,4,.32);backdrop-filter:blur(10px)}
-.live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--mode-accent);margin-right:7px;box-shadow:0 0 8px var(--mode-accent)}
-.menu-button,.close-player{background:none;border:0;color:inherit;cursor:pointer}
+.live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--mode-accent);margin-right:7px;box-shadow:0 0 8px var(--mode-accent);flex:0 0 auto}
+.live-count{font-weight:700;color:var(--mode-accent);margin-right:5px;font-style:normal}
+.menu-button{background:none;border:0;color:inherit;cursor:pointer}
 
 /* mode switching: swipe the scene, or use the dots / edge chevrons */
 .mode-dots{position:relative;z-index:3;display:flex;align-items:center;gap:14px;margin:28px 0 0;flex:0 0 auto}
@@ -38,95 +181,152 @@
 .mode-dot{width:22px;height:7px;padding:0;border-radius:99px;border:0;background:rgba(255,255,255,.32);cursor:pointer;transform:scaleX(.32);transform-origin:left center;transition:transform .25s,background .25s}
 .mode-dot:hover{background:rgba(255,255,255,.55)}
 .mode-dot-active{transform:scaleX(1);background:var(--mode-accent)}
-.mode-dot:focus-visible,.player-controls button:focus-visible,.player-repeat:focus-visible,.close-player:focus-visible,.edge-nav:focus-visible{outline:2px solid var(--mode-accent);outline-offset:2px}
+.mode-dot:focus-visible,.player-controls button:focus-visible,.edge-nav:focus-visible{outline:2px solid var(--mode-accent);outline-offset:2px}
 .edge-nav{position:fixed;z-index:3;top:50%;transform:translateY(-50%);width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.16);background:rgba(10,6,4,.28);backdrop-filter:blur(10px);color:rgba(255,255,255,.7);display:grid;place-items:center;cursor:pointer;opacity:.6;transition:opacity .2s,background .2s}
 .edge-nav:hover{opacity:1;background:rgba(10,6,4,.5)}
 .edge-nav-prev{left:14px}
 .edge-nav-next{right:14px}
 
 /* ===== hero, centered in the remaining space ===== */
-.hero{position:relative;z-index:1;flex:1 1 auto;min-height:0;display:grid;grid-template-columns:minmax(280px,1fr) auto;align-content:center;align-items:center;gap:6vw;max-width:1370px;width:100%;margin:0 auto}
-.eyebrow{font:500 12px 'Noto Sans Devanagari';letter-spacing:.4px}
-.eyebrow-line{display:inline-block;width:28px;height:1px;background:var(--mode-accent);vertical-align:middle;margin-right:10px}
-.hero h1{font-family:'Yatra One';font-size:clamp(38px,5.6vw,78px);line-height:1.08;letter-spacing:0;max-width:640px;margin:18px 0 6px;font-weight:400;text-shadow:0 4px 28px rgba(0,0,0,.45)}
-.hindi-title{font:400 clamp(18px,2.2vw,26px) 'Noto Sans Devanagari';color:var(--mode-accent);letter-spacing:.3px}
-.description{max-width:390px;color:var(--muted);font-size:16px;line-height:1.7;margin:20px 0}
+/* Single column since the floating now-card was removed — the right side of
+   every plate is now free to be seen. */
+.hero{position:relative;z-index:1;flex:1 1 auto;min-height:0;display:grid;align-content:center;max-width:1370px;width:100%;margin:0 auto}
+/* One Devanagari word, set large and quiet, is the whole headline. The plates
+   already carry the mood — restating it in an eyebrow, a subtitle AND a
+   paragraph was what made the old hero read busy rather than premium. */
+.hero h1{font-family:'Yatra One';font-size:clamp(60px,10.5vw,164px);line-height:.9;letter-spacing:-.015em;margin:0;font-weight:400;text-shadow:0 6px 44px rgba(0,0,0,.5)}
+.hero-line{font:400 clamp(15px,1.6vw,20px) 'Noto Sans Devanagari';color:var(--muted);letter-spacing:.02em;line-height:1.6;margin:18px 0 26px;max-width:30ch;text-shadow:0 2px 18px rgba(0,0,0,.5)}
 .route-chip{display:inline-flex;align-items:center;gap:9px;padding:10px 13px;border-radius:6px;background:rgba(10,6,4,.34);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.18);font:500 13px 'Noto Sans Devanagari'}
 
-/* ===== now-card: compact "now playing" accent floating over the scene ===== */
-.hero-art{position:relative;justify-self:end;align-self:center}
-.now-card{width:224px;padding:20px 20px 22px;border-radius:20px;background:rgba(10,6,4,.4);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.16);box-shadow:0 24px 60px rgba(0,0,0,.4);position:relative}
-.now-card-top{font:600 10px 'Noto Sans Devanagari';letter-spacing:.4px;color:var(--muted)}
-.now-card-disc{width:100%;aspect-ratio:1;border-radius:14px;margin:14px 0;background:var(--mode-accent);position:relative;overflow:hidden;display:grid;place-items:center;box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)}
-.now-card-disc:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 20px,#fff 21px 22px);opacity:.16;transform:rotate(20deg)}
-.now-card-icon{color:#fff;opacity:.92}
-.now-card-icon.art-spin{animation:spin 14s linear infinite}
-.now-card-title{font:600 19px 'Noto Sans Devanagari';letter-spacing:0;line-height:1.2}
-.now-card-sub{font:500 11px 'Noto Sans Devanagari';color:var(--muted);margin-top:6px;display:block}
 /* mid-swap: the track identity is unknown, so breathe rather than assert it */
-.now-card.is-switching .now-card-title,.now-card.is-switching .now-card-sub,.now-copy.is-switching strong,.now-copy.is-switching small{animation:track-settling 1.15s ease-in-out infinite}
+.now-copy.is-switching strong,.now-copy.is-switching small{animation:track-settling 1.15s ease-in-out infinite}
 @keyframes track-settling{0%,100%{opacity:.42}50%{opacity:.82}}
-@media (prefers-reduced-motion:reduce){.now-card.is-switching .now-card-title,.now-card.is-switching .now-card-sub,.now-copy.is-switching strong,.now-copy.is-switching small{animation:none;opacity:.6}}
-.art-sticker{position:absolute;right:-14px;top:-14px;background:#f6c445;color:#241812;padding:10px;border-radius:50%;font:600 9px 'Noto Sans Devanagari';letter-spacing:0;transform:rotate(10deg);box-shadow:4px 5px 0 rgba(0,0,0,.25);width:66px;height:66px;display:grid;place-items:center;text-align:center;line-height:1.15}
+@media (prefers-reduced-motion:reduce){.now-copy.is-switching strong,.now-copy.is-switching small{animation:none;opacity:.6}}
 
-/* ===== player bar: richer than a plain strip — mode-tinted glass + live eq ===== */
-.now-playing{position:fixed;z-index:5;bottom:17px;left:50%;transform:translateX(-50%);width:min(880px,calc(100% - 30px));display:flex;align-items:center;gap:12px;padding:10px 16px 10px 10px;color:var(--paper,#fff4e8);border-radius:16px;box-shadow:0 16px 40px rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.14);background:linear-gradient(120deg,rgba(10,6,4,.82),rgba(10,6,4,.65)),radial-gradient(120% 160% at 0% 0%,color-mix(in srgb,var(--mode-accent) 22%,transparent),transparent 60%);backdrop-filter:blur(20px);touch-action:auto}
-.now-art{display:grid;place-items:center;flex:0 0 auto;width:44px;height:44px;border-radius:8px;color:#fff}
-.now-copy{display:flex;flex-direction:column;min-width:140px;border:0;background:none;padding:0;text-align:left;color:inherit;cursor:pointer;font-family:inherit}
-.now-copy span{font:600 9px 'Noto Sans Devanagari';color:var(--mode-accent);letter-spacing:.2px}
-.now-copy strong{font:600 14px 'Noto Sans Devanagari'}
-.now-copy small{font:11px 'Noto Sans Devanagari';color:rgba(255,255,255,.6)}
-.player-eq{display:flex;gap:3px;align-items:flex-end;height:16px;flex:0 0 auto}
-.player-eq i{display:block;width:3px;border-radius:1px;background:var(--mode-accent);animation:bars .8s infinite alternate}
-.player-eq i:nth-child(1){height:8px}
-.player-eq i:nth-child(2){height:16px;animation-delay:.2s}
-.player-eq i:nth-child(3){height:11px;animation-delay:.4s}
-.player-controls{display:flex;align-items:center;gap:2px;margin-left:auto}
-.player-controls button{display:grid;place-items:center;border:0;background:none;color:inherit;cursor:pointer;padding:7px}
-.player-controls .play-button{width:36px;height:36px;border-radius:50%;background:var(--mode-accent);color:#180a06}
-.player-volume{display:flex;align-items:center;gap:7px;color:rgba(255,255,255,.7);padding-left:10px;border-left:1px solid rgba(255,255,255,.14)}
-.player-volume input[type="range"]{width:70px;accent-color:var(--mode-accent)}
-.player-repeat{display:grid;place-items:center;border:0;background:none;cursor:pointer;padding:6px;color:rgba(255,255,255,.5)}
-.player-repeat:hover{color:rgba(255,255,255,.8)}
-.close-player{color:rgba(255,255,255,.5)}
+/* ===== player bar ===== */
+.now-playing{position:fixed;z-index:5;bottom:18px;left:50%;transform:translateX(-50%);width:min(820px,calc(100% - 28px));color:#fff4e8;border-radius:18px;overflow:hidden;box-shadow:0 20px 50px -12px rgba(0,0,0,.6),0 0 0 .5px rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.13);background:linear-gradient(180deg,rgba(14,9,7,.78),rgba(9,5,4,.82)),radial-gradient(130% 200% at 8% 0%,color-mix(in srgb,var(--mode-accent) 20%,transparent),transparent 62%);backdrop-filter:blur(24px) saturate(140%);touch-action:auto}
 
-@keyframes spin{to{transform:rotate(360deg)}}
+/* Seek row: elapsed | track | total. Always visible, never hover-gated — the
+   knob is what tells you the bar is draggable, and on touch there is no hover
+   to reveal it. The 16px tall hit area sits well above the 44px-ish comfort
+   target only because the whole row is padded around it. */
+.player-seek-row{display:flex;align-items:center;gap:10px;padding:0 16px 11px}
+.player-time{font:500 11px 'Noto Sans Devanagari';color:rgba(255,255,255,.55);white-space:nowrap;flex:0 0 auto;min-width:38px;text-align:center;font-variant-numeric:tabular-nums}
+.player-seek{position:relative;flex:1 1 auto;height:16px;display:flex;align-items:center;cursor:pointer;touch-action:none}
+.player-seek::before{content:"";position:absolute;left:0;right:0;height:3px;border-radius:2px;background:rgba(255,255,255,.16)}
+.player-seek-fill{position:relative;display:block;height:3px;border-radius:2px;background:var(--mode-accent);pointer-events:none;transition:height .16s ease}
+.player-seek-fill::after{content:"";position:absolute;right:-6px;top:50%;width:11px;height:11px;border-radius:50%;background:var(--mode-accent);transform:translateY(-50%);box-shadow:0 1px 5px rgba(0,0,0,.5);transition:transform .16s ease}
+.player-seek:hover .player-seek-fill,.player-seek:active .player-seek-fill{height:5px}
+.player-seek:hover .player-seek-fill::after,.player-seek:active .player-seek-fill::after{transform:translateY(-50%) scale(1.25)}
+.player-seek:focus-visible{outline:2px solid var(--mode-accent);outline-offset:3px;border-radius:4px}
+
+.player-row{display:flex;align-items:center;gap:13px;padding:12px 14px 8px 12px}
+/* Thumbnail is a crop of the mode's own plate — the one idea worth keeping
+   from the floating card that used to sit over the scene. */
+.now-art{flex:0 0 auto;width:46px;height:46px;border-radius:10px;border:0;padding:0;cursor:pointer;background-size:cover;background-position:62% 58%;box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),0 4px 12px rgba(0,0,0,.4);transition:transform .2s ease}
+.now-art:hover{transform:scale(1.04)}
+.now-copy{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 auto;border:0;background:none;padding:0;text-align:left;color:inherit;cursor:pointer;font-family:inherit}
+.now-copy strong{font:600 14px 'Noto Sans Devanagari';white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.now-copy small{font:400 11.5px 'Noto Sans Devanagari';color:rgba(255,255,255,.55);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.player-controls{display:flex;align-items:center;gap:4px;flex:0 0 auto}
+.player-controls button{display:grid;place-items:center;border:0;background:none;color:rgba(255,255,255,.82);cursor:pointer;padding:7px;border-radius:50%;transition:color .18s ease,background .18s ease}
+.player-controls button:hover{color:#fff;background:rgba(255,255,255,.09)}
+.player-controls .play-button{width:38px;height:38px;background:var(--mode-accent);color:#180a06;box-shadow:0 3px 14px -2px color-mix(in srgb,var(--mode-accent) 70%,transparent)}
+.player-controls .play-button:hover{background:var(--mode-accent);filter:brightness(1.08)}
+
+.player-meta{display:flex;align-items:center;gap:4px;flex:0 0 auto;margin-left:4px;padding-left:12px;border-left:1px solid rgba(255,255,255,.1)}
+.player-icon{display:grid;place-items:center;border:0;background:none;cursor:pointer;padding:7px;border-radius:8px;color:rgba(255,255,255,.5);transition:color .18s ease,background .18s ease}
+.player-icon:hover{color:rgba(255,255,255,.9);background:rgba(255,255,255,.07)}
+.player-icon.is-on{color:var(--mode-accent)}
+/* Volume collapses to its icon and expands on hover/focus — least-used control,
+   biggest horizontal footprint. */
+.player-volume{display:flex;align-items:center;gap:0;color:rgba(255,255,255,.5);padding:7px;border-radius:8px;transition:color .18s ease,background .18s ease}
+.player-volume:hover{color:rgba(255,255,255,.9);background:rgba(255,255,255,.07)}
+.player-volume input[type="range"]{width:0;opacity:0;accent-color:var(--mode-accent);transition:width .24s ease,opacity .2s ease,margin-left .24s ease}
+.player-volume:hover input[type="range"],.player-volume:focus-within input[type="range"]{width:66px;opacity:1;margin-left:8px}
+.player-icon:focus-visible,.now-art:focus-visible,.now-copy:focus-visible,.player-volume input:focus-visible{outline:2px solid var(--mode-accent);outline-offset:2px}
+
+/* ===== desktop: collapse the player to a single row =====
+   The stacked layout is right on a phone, where there is no width to spare, but
+   on a wide screen it makes the pill a two-line slab. `display:contents` lifts
+   .player-row's children up to be flex items of the pill itself, so the seek can
+   be ordered between the transport and the options without duplicating markup
+   or nesting the rows differently per breakpoint. Track and type both step down
+   a size here — inline, the seek is a readout, not the main event. */
+@media(min-width:761px){
+  .now-playing{display:flex;align-items:center;gap:12px;padding:9px 14px 9px 10px}
+  .player-row{display:contents}
+  .now-art{order:1}
+  .now-copy{order:2;flex:0 1 auto;min-width:140px;max-width:210px;margin-right:4px}
+  .player-controls{order:3}
+  .player-seek-row{order:4;flex:1 1 auto;min-width:120px;padding:0;gap:9px}
+  .player-meta{order:5}
+  .player-seek{height:14px}
+  .player-seek::before,.player-seek-fill{height:2.5px}
+  .player-seek:hover .player-seek-fill,.player-seek:active .player-seek-fill{height:4px}
+  .player-seek-fill::after{width:9px;height:9px;right:-5px}
+  .player-time{font-size:10px;min-width:32px}
+}
+
 @keyframes bars{to{transform:scaleY(.35)}}
 
 @media(max-width:760px){
-  .indian-playlist{padding:20px 16px 108px}
-  .live-pill{display:none}
+  .indian-playlist{padding:20px 16px 96px}
+  .live-pill{padding:7px 11px;font-size:11px}
   .mode-dots{margin:22px 0 0}
   .mode-current{font-size:12px}
   .edge-nav{width:32px;height:32px}
   .edge-nav-prev{left:6px}
   .edge-nav-next{right:6px}
-  .hero{grid-template-columns:1fr;gap:22px;align-content:start;padding-top:14px}
-  .hero-art{justify-self:start}
-  .now-card{width:172px}
+  .hero{gap:22px;align-content:start;padding-top:14px}
   .scene-scrim-left{background:linear-gradient(180deg,var(--surface) 0%,rgba(0,0,0,.42) 44%,transparent 68%)}
-  .now-playing{gap:8px;padding:8px 12px 8px 8px}
-  .player-eq,.player-volume{display:none}
-  .now-copy{min-width:0;flex:1}
-  .now-art{width:38px;height:38px}
-  .now-copy strong{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* Portrait crops a 16:9 plate hard on the horizontal, and every one of these
+     was composed with its subject in the right two-thirds — so a centred crop
+     throws the bus, the trekker, the bonfire and the harmonium off-screen and
+     leaves the phone showing empty sky and hillside. Pull each plate toward its
+     own subject instead of accepting the default. */
+  .scene-plate-driver{background-position:76% center}
+  .scene-plate-rainy{background-position:70% center}
+  .scene-plate-party{background-position:72% center}
+  .scene-plate-ghazal{background-position:66% center}
+
+  /* The ambience glows are positioned in viewport percentages against the
+     DESKTOP crop. Shifting each plate toward its subject above moves the fire,
+     the bulbs and the berth lamp to new screen coordinates, so the lights have
+     to follow them — otherwise the bonfire glow lands on empty sand and the
+     lamp swell sits on a curtain. */
+  .fx-glow-fire{background:radial-gradient(36% 24% at 41% 61%,rgba(255,166,74,.5),rgba(255,120,40,.16) 45%,transparent 72%)}
+  .fx-bulbs-rose{background:radial-gradient(52% 40% at 34% 44%,rgba(255,64,150,.30),rgba(255,64,150,.10) 52%,transparent 74%)}
+  .fx-bulbs-cyan{background:radial-gradient(46% 36% at 52% 40%,rgba(56,206,238,.26),rgba(56,206,238,.08) 54%,transparent 76%)}
+  .fx-bulbs-amber{
+    background-image:
+      radial-gradient(7px 7px at 30% 40%,rgba(255,206,128,.85),transparent),
+      radial-gradient(8px 8px at 39% 38%,rgba(255,196,110,.8),transparent),
+      radial-gradient(7px 7px at 47% 40%,rgba(255,214,150,.75),transparent),
+      radial-gradient(9px 9px at 55% 43%,rgba(255,200,120,.7),transparent)}
+  .fx-lamp{background:radial-gradient(30% 20% at 46% 23%,rgba(255,198,116,.38),transparent 68%)}
+  /* Volume is the only thing dropped on a phone. The seek row survives intact,
+     times included — being able to see and scrub position matters more on the
+     small screen than the volume slider does. */
+  .player-volume{display:none}
+  /* Adding the seek row cost the pill a whole extra line, so everything else on
+     the phone gets pulled in to pay for it — otherwise the player grows into a
+     slab that competes with the plate it is sitting on. */
+  .now-playing{bottom:12px;width:calc(100% - 20px);border-radius:15px}
+  .player-seek-row{padding:0 11px 7px;gap:7px}
+  .player-time{font-size:9.5px;min-width:30px}
+  /* Still a generous finger target even though the row is tighter. */
+  .player-seek{height:18px}
+  .player-row{gap:9px;padding:8px 9px 4px 8px}
+  .now-art{width:36px;height:36px;border-radius:8px}
+  .now-copy strong{font-size:12px}
   .now-copy small{font-size:10px}
-  .player-controls button{padding:6px}
-  .player-controls .play-button{width:33px;height:33px}
-}
-
-.player-shuffle{background:none;border:0;color:rgba(255,255,255,.5);cursor:pointer;padding:6px;display:grid;place-items:center}
-.player-shuffle:hover{color:rgba(255,255,255,.8)}
-.player-shuffle-active{color:var(--mode-accent)}
-.player-progress-wrap{display:flex;align-items:center;gap:7px;font:10px 'DM Mono';color:rgba(255,255,255,.55)}
-.player-progress-track{position:relative;width:70px;height:16px;display:flex;align-items:center;cursor:pointer;touch-action:none}
-.player-progress-track::before{content:"";position:absolute;left:0;right:0;height:3px;border-radius:2px;background:rgba(255,255,255,.18)}
-.player-progress-fill{position:relative;display:block;height:3px;border-radius:2px;background:var(--mode-accent);pointer-events:none}
-.player-progress-fill::after{content:"";position:absolute;right:-4.5px;top:50%;width:9px;height:9px;border-radius:50%;background:var(--mode-accent);transform:translateY(-50%);opacity:0;transition:opacity .15s}
-.player-progress-track:hover .player-progress-fill::after,.player-progress-track:active .player-progress-fill::after{opacity:1}
-
-@media(max-width:760px){
-  .player-progress-wrap{display:none}
+  .player-meta{margin-left:0;padding-left:5px;gap:1px}
+  .player-icon{padding:5px}
+  .player-controls{gap:1px}
+  .player-controls button{padding:5px}
+  .player-controls .play-button{width:31px;height:31px}
 }
 
 /* ===== playlist sheet: slides up from the player, its own internal scroll — the fixed landing page never scrolls ===== */
@@ -141,7 +341,7 @@
 .sheet-row{display:flex;align-items:center;gap:14px;width:100%;border:0;background:none;padding:12px 10px;border-radius:12px;text-align:left;cursor:pointer;color:inherit}
 .sheet-row:hover{background:rgba(255,255,255,.06)}
 .sheet-row-active{background:rgba(255,255,255,.09)}
-.sheet-row-index{font:500 11px 'DM Mono';color:rgba(255,255,255,.4);width:22px;flex:0 0 auto}
+.sheet-row-index{font:500 12px 'Noto Sans Devanagari';color:rgba(255,255,255,.4);width:22px;flex:0 0 auto}
 .sheet-row-active .sheet-row-index{color:var(--mode-accent)}
 .sheet-row-copy{display:flex;flex-direction:column;gap:2px;min-width:0}
 .sheet-row-copy strong{font:600 14px 'Noto Sans Devanagari';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}

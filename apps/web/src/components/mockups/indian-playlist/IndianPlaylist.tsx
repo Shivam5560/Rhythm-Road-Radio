@@ -4,7 +4,6 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Disc3,
   Droplets,
   ListMusic,
   MapPin,
@@ -17,14 +16,14 @@ import {
   SkipForward,
   Sparkles,
   Volume2,
-  Waves,
-  X,
 } from "lucide-react";
 import "./indian-playlist.css";
-import { SceneStage } from "./Scene";
+import { SceneStage, plates } from "./Scene";
 import { PlaylistSheet } from "./PlaylistSheet";
 import { useYouTubePlayer } from "../../../hooks/useYouTubePlayer";
+import { useOnlineCount } from "../../../hooks/useOnlineCount";
 import { formatTime } from "../../../lib/formatTime";
+import { toDevanagariDigits } from "../../../lib/devanagariDigits";
 import { driverTracks } from "../../../data/tracks.driver";
 import { rainyTracks } from "../../../data/tracks.rainy";
 import { partyTracks } from "../../../data/tracks.party";
@@ -32,69 +31,62 @@ import { ghazalTracks } from "../../../data/tracks.ghazal";
 
 export type PlaylistMode = "driver" | "party" | "rainy" | "ghazal";
 
-const modes: Record<PlaylistMode, {
+/**
+ * One Devanagari word carries each mode, with a single quiet line under it.
+ *
+ * The plates say everything the old eyebrow, second title and paragraph were
+ * saying in words — restating it three more ways is what made the hero read
+ * busy. Accents are re-pulled from each plate's own dominant light so the
+ * chrome tints with the picture instead of against it.
+ */
+export const modes: Record<PlaylistMode, {
   label: string;
-  eyebrow: string;
   title: string;
-  hindi: string;
-  description: string;
+  line: string;
   accent: string;
   soft: string;
   chip: string;
-  sticker: string;
   cardLabel: string;
   playlistId: string;
 }> = {
   driver: {
     label: "बस ड्राइवर",
-    eyebrow: "पहाड़ी रूट · खुली छत",
-    title: "बादलों के पार, सफ़र जारी है",
-    hindi: "लद्दाख की राहों में",
-    description: "खुली छत, ठंडी हवा और पहाड़ों का हर मोड़ — हर गाना एक नया नज़ारा है।",
-    accent: "#e76f51",
+    title: "सफ़र",
+    line: "खुली छत, ठंडी हवा, पहाड़ का हर मोड़।",
+    accent: "#e2673f",
     soft: "#ffe0c2",
-    chip: "लेह, लद्दाख",
-    sticker: "सुरक्षित सफ़र",
-    cardLabel: "रूट / लेह-मनाली",
+    chip: "लेह–मनाली",
+    cardLabel: "रूट",
     playlistId: "PL0umg_TNpoZTTdZVIi5tfX69pRmoMFGna",
   },
   party: {
     label: "पार्टी मोड",
-    eyebrow: "गोवा बीच · ढलते सूरज के साथ",
-    title: "आज रेत पर नाचेंगे सब",
-    hindi: "समंदर किनारे की धुन",
-    description: "लहरों की आवाज़, बोनफायर की चिंगारी और पैरों तले रेत — यहाँ हर रात एक जश्न है।",
-    accent: "#d7263d",
+    title: "जश्न",
+    line: "ढलता सूरज, जलती आग, पैरों तले रेत।",
+    accent: "#f2884b",
     soft: "#ffb4b4",
-    chip: "अंजुना बीच, गोवा",
-    sticker: "बेफिक्र रातें",
-    cardLabel: "साइड ए / डांस",
+    chip: "अंजुना, गोवा",
+    cardLabel: "साइड ए",
     playlistId: "PLfcRxVaMQ7ZM",
   },
   rainy: {
     label: "बारिश का मौसम",
-    eyebrow: "मानसून रेडियो · रात ८ बजे के बाद",
-    title: "बारिश को साथ गाने दो",
-    hindi: "बारिश की रात",
-    description: "हल्की रोशनी, गीली सड़कें और वो गाने जो हर पुरानी याद को याद रखते हैं।",
-    accent: "#2a6f97",
+    title: "बारिश",
+    line: "भीगा रास्ता, उतरता कोहरा, धीमी धुन।",
+    accent: "#7fa08a",
     soft: "#b9d9df",
     chip: "वायनाड, केरल",
-    sticker: "बारिश / रिपीट",
-    cardLabel: "रात / २००७",
+    cardLabel: "मानसून",
     playlistId: "PL43tsEhYIdTuf-xO_4ZrZtRp1dwulm2SQ",
   },
   ghazal: {
     label: "ग़ज़ल मोड",
-    eyebrow: "रात की बस · ग़ज़ल की महफ़िल",
-    title: "हर शेर में एक कहानी है",
-    hindi: "रात की महफ़िल",
-    description: "बर्थ की टिमटिमाती बत्ती, शीशे पर बारिश की बूँदें और ग़ज़लें जो नींद से पहले दिल को छू जाएँ।",
-    accent: "#c9974a",
+    title: "महफ़िल",
+    line: "बर्थ की बत्ती, शीशे पर बूँदें, एक शेर।",
+    accent: "#e0a44f",
     soft: "#f0dcae",
     chip: "आगरा कैंट",
-    sticker: "देर रात / ग़ज़ल",
-    cardLabel: "बर्थ / सात",
+    cardLabel: "बर्थ",
     playlistId: "PL43tsEhYIdTvnK96MqsVkXV90fQFcsdoN",
   },
 };
@@ -115,30 +107,18 @@ function ModeIcon({ mode }: { mode: PlaylistMode }) {
   return <Droplets size={16} />;
 }
 
-function NowCard({ mode, title, artist, switching }: { mode: PlaylistMode; title: string; artist: string; switching?: boolean }) {
-  const current = modes[mode];
-  return (
-    <div className={`now-card ${switching ? "is-switching" : ""}`} aria-label={`${title} अभी बज रहा है`}>
-      <span className="art-sticker">{current.sticker}</span>
-      <div className="now-card-top"><span>{current.cardLabel}</span></div>
-      <div className="now-card-disc">
-        {mode === "driver" && <BusFront className="now-card-icon" size={54} strokeWidth={1.2} />}
-        {mode === "party" && <Disc3 className="now-card-icon art-spin" size={62} strokeWidth={1.1} />}
-        {mode === "rainy" && <Waves className="now-card-icon" size={58} strokeWidth={1.1} />}
-        {mode === "ghazal" && <Moon className="now-card-icon" size={54} strokeWidth={1.1} />}
-      </div>
-      <div className="now-card-title">{title}</div>
-      <span className="now-card-sub">{artist}</span>
-    </div>
-  );
-}
+/* The floating now-card was removed: it covered the best part of every plate
+ * and duplicated, in a bigger and worse-looking form, everything the player bar
+ * already says. Its one good idea — art cut from the mode's own plate — moved
+ * into the player's thumbnail. */
 
-export function IndianPlaylist({ mode: initialMode = "rainy" }: { mode?: PlaylistMode }) {
+export function IndianPlaylist({ mode: initialMode = "driver" }: { mode?: PlaylistMode }) {
   const [mode, setMode] = useState<PlaylistMode>(initialMode);
   const current = modes[mode];
   const tint = useMemo(() => ({ "--mode-accent": current.accent, "--mode-soft": current.soft } as CSSProperties), [current]);
 
   const player = useYouTubePlayer(current.playlistId, trackMapByMode[mode]);
+  const online = useOnlineCount();
 
   // While a playlist swap is in flight the player still reports the outgoing
   // mode's video, which the new mode's curated map can't name — showing it
@@ -240,7 +220,14 @@ export function IndianPlaylist({ mode: initialMode = "rainy" }: { mode?: Playlis
 
       <header className="topbar">
         <div className="brand-mark"><span>रास्ता</span><b>रेडियो</b></div>
-        <div className="live-pill"><span className="live-dot" /> बस में लाइव</div>
+        {/* The count only appears once presence has actually answered. If the
+            store is not provisioned the pill quietly stays as it was — an
+            invented "online" number would be worse than none. */}
+        <div className="live-pill" aria-live="polite">
+          <span className="live-dot" />
+          {online !== null && <b className="live-count">{toDevanagariDigits(String(online))}</b>}
+          रास्ते पर लाइव
+        </div>
         <button className="menu-button" aria-label="मेनू खोलें"><Menu size={21} /></button>
       </header>
 
@@ -258,58 +245,79 @@ export function IndianPlaylist({ mode: initialMode = "rainy" }: { mode?: Playlis
 
       <section className="hero">
         <div className="hero-copy">
-          <p className="eyebrow"><span className="eyebrow-line" />{current.eyebrow}</p>
           <h1>{current.title}</h1>
-          <div className="hindi-title">{current.hindi}</div>
-          <p className="description">{current.description}</p>
+          <p className="hero-line">{current.line}</p>
           <div className="route-chip"><MapPin size={15} /><span>{current.chip}</span><ChevronDown size={15} /></div>
         </div>
-        <div className="hero-art"><NowCard mode={mode} title={trackTitle} artist={trackArtist} switching={player.isSwitching} /></div>
       </section>
 
       <footer className="now-playing">
-        <div className="now-art" style={{ background: current.accent }}><Disc3 size={22} /></div>
-        <button className={`now-copy ${player.isSwitching ? "is-switching" : ""}`} onClick={() => setQueueOpen(true)} aria-label="पूरी प्लेलिस्ट देखें">
-          <span>बज रहा है</span><strong>{trackTitle}</strong><small>{trackArtist}</small>
-        </button>
-        {player.isPlaying && <span className="player-eq" aria-hidden="true"><i /><i /><i /></span>}
-        <div className="player-controls">
-          <button onClick={player.previous} aria-label="पिछला गाना"><SkipBack size={18} fill="currentColor" /></button>
-          <button className="play-button" onClick={player.isPlaying ? player.pause : player.play} aria-label={player.isPlaying ? "रोकें" : "चलाएँ"}>
-            {player.isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+        <div className="player-row">
+          <button
+            className="now-art"
+            style={{ backgroundImage: `url(${plates[mode]})` }}
+            onClick={() => setQueueOpen(true)}
+            aria-label="पूरी प्लेलिस्ट देखें"
+          />
+          <button className={`now-copy ${player.isSwitching ? "is-switching" : ""}`} onClick={() => setQueueOpen(true)} aria-label="पूरी प्लेलिस्ट देखें">
+            <strong>{trackTitle}</strong><small>{trackArtist}</small>
           </button>
-          <button onClick={player.next} aria-label="अगला गाना"><SkipForward size={18} fill="currentColor" /></button>
+
+          <div className="player-controls">
+            <button onClick={player.previous} aria-label="पिछला गाना"><SkipBack size={17} fill="currentColor" /></button>
+            <button className="play-button" onClick={player.isPlaying ? player.pause : player.play} aria-label={player.isPlaying ? "रोकें" : "चलाएँ"}>
+              {player.isPlaying ? <Pause size={17} fill="currentColor" /> : <Play size={17} fill="currentColor" />}
+            </button>
+            <button onClick={player.next} aria-label="अगला गाना"><SkipForward size={17} fill="currentColor" /></button>
+          </div>
+
+          <div className="player-meta">
+            <button className={`player-icon ${player.shuffled ? "is-on" : ""}`} onClick={player.toggleShuffle} aria-label={player.shuffled ? "शफ़ल बंद करें" : "शफ़ल करें"}>
+              <Shuffle size={15} />
+            </button>
+            {/* Volume stays collapsed until the player is hovered — it is the
+                least-used control and was taking the most horizontal room. */}
+            <div className="player-volume">
+              <Volume2 size={15} />
+              <input type="range" min="0" max="100" defaultValue={68} onChange={(e) => player.setVolume(Number(e.target.value))} aria-label="आवाज़" />
+            </div>
+            <button className="player-icon" onClick={() => setQueueOpen(true)} aria-label="पूरी प्लेलिस्ट देखें">
+              <ListMusic size={16} />
+            </button>
+          </div>
         </div>
-        <div className="player-progress-wrap">
-          <span>{formatTime(scrubFraction !== null ? scrubFraction * player.duration : player.currentTime)}</span>
+
+        {/* Seek sits UNDER the transport, not above the artwork. Floated on top
+            it read as a detached line with no owner; anchored beneath the
+            controls it belongs to them, which is also where every music player
+            has trained people to look for it. Times flank the track on every
+            breakpoint — a hover-only hairline gives no readable position and
+            never appears at all on touch. */}
+        <div className="player-seek-row">
+          <span className="player-time">
+            {toDevanagariDigits(formatTime(scrubFraction !== null ? scrubFraction * player.duration : player.currentTime))}
+          </span>
           <div
-            className="player-progress-track"
+            className="player-seek"
             ref={progressTrackRef}
             onPointerDown={onProgressPointerDown}
             onPointerMove={onProgressPointerMove}
             onPointerUp={onProgressPointerUp}
             onPointerCancel={onProgressPointerUp}
             role="slider"
+            tabIndex={0}
             aria-label="प्रगति"
             aria-valuemin={0}
             aria-valuemax={player.duration}
             aria-valuenow={player.currentTime}
           >
-            <span className="player-progress-fill" style={{ width: `${scrubFraction !== null ? scrubFraction * 100 : player.duration ? (player.currentTime / player.duration) * 100 : 0}%` }} />
+            <span
+              className="player-seek-fill"
+              style={{ width: `${scrubFraction !== null ? scrubFraction * 100 : player.duration ? (player.currentTime / player.duration) * 100 : 0}%` }}
+            />
           </div>
-          <span>{formatTime(player.duration)}</span>
+          <span className="player-time">{toDevanagariDigits(formatTime(player.duration))}</span>
         </div>
-        <button className={`player-shuffle ${player.shuffled ? "player-shuffle-active" : ""}`} onClick={player.toggleShuffle} aria-label={player.shuffled ? "शफ़ल बंद करें" : "शफ़ल करें"}>
-          <Shuffle size={15} />
-        </button>
-        <div className="player-volume">
-          <Volume2 size={15} />
-          <input type="range" min="0" max="100" defaultValue={68} onChange={(e) => player.setVolume(Number(e.target.value))} aria-label="आवाज़" />
-        </div>
-        <button className="player-repeat" onClick={() => setQueueOpen(true)} aria-label="पूरी प्लेलिस्ट देखें">
-          <ListMusic size={16} />
-        </button>
-        <button className="close-player" aria-label="प्लेयर बंद करें" onClick={player.pause}><X size={16} /></button>
       </footer>
 
       <PlaylistSheet
